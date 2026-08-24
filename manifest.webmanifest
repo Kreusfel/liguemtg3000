@@ -1,0 +1,14 @@
+{
+  "name": "La Jurande — ligue MTG",
+  "short_name": "La Jurande",
+  "description": "Ligue Magic : ELO 1v1 (construit & limité) et classement Commander joueur/deck.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#f3ecdd",
+  "theme_color": "#1a1410",
+  "lang": "fr",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

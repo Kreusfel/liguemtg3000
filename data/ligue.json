@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "titre": "La Jurande",
+  "joueurs": [
+    { "id": "j1", "nom": "Romain", "actif": true },
+    { "id": "j2", "nom": "Antoine", "actif": true },
+    { "id": "j3", "nom": "Élise", "actif": true },
+    { "id": "j4", "nom": "Marc", "actif": true },
+    { "id": "j5", "nom": "Julien", "actif": true }
+  ],
+  "decks": [
+    { "id": "d1", "joueur_id": "j1", "nom": "Krenko Gobelins", "commandant": "Krenko, Mob Boss", "couleurs": ["R"], "format": "commander", "actif": true },
+    { "id": "d2", "joueur_id": "j2", "nom": "Atraxa Superamis", "commandant": "Atraxa, Praetors' Voice", "couleurs": ["W", "U", "B", "G"], "format": "commander", "actif": true },
+    { "id": "d3", "joueur_id": "j3", "nom": "Yuriko Ninjas", "commandant": "Yuriko, the Tiger's Shadow", "couleurs": ["U", "B"], "format": "commander", "actif": true },
+    { "id": "d4", "joueur_id": "j4", "nom": "Gishath Dinos", "commandant": "Gishath, Sun's Avatar", "couleurs": ["R", "G", "W"], "format": "commander", "actif": true },
+    { "id": "d5", "joueur_id": "j5", "nom": "Chulane Valeur", "commandant": "Chulane, Teller of Tales", "couleurs": ["G", "W", "U"], "format": "commander", "actif": true }
+  ],
+  "saisons": [
+    { "id": "s1", "nom": "Saison 2026", "debut": "2026-01-01", "fin": null, "active": true }
+  ],
+  "soirees": [
+    { "id": "e1", "saison_id": "s1", "date": "2026-06-19", "lieu": "Chez Romain", "notes": "" },
+    { "id": "e2", "saison_id": "s1", "date": "2026-07-17", "lieu": "Boutique", "notes": "" },
+    { "id": "e3", "saison_id": "s1", "date": "2026-08-21", "lieu": "Chez Antoine", "notes": "" }
+  ],
+  "parties": [
+    { "id": "p1", "soiree_id": "e1", "saison_id": "s1", "type": "pod", "format": "commander",
+      "participants": [
+        { "joueur_id": "j1", "deck_id": "d1", "place": 1 },
+        { "joueur_id": "j2", "deck_id": "d2", "place": 2 },
+        { "joueur_id": "j3", "deck_id": "d3", "place": 3 },
+        { "joueur_id": "j4", "deck_id": "d4", "place": 4 }
+      ] },
+    { "id": "p2", "soiree_id": "e1", "saison_id": "s1", "type": "1v1", "categorie": "construit", "format": "pauper",
+      "participants": [
+        { "joueur_id": "j1", "deck_id": null, "resultat": "V" },
+        { "joueur_id": "j2", "deck_id": null, "resultat": "D" }
+      ] },
+    { "id": "p3", "soiree_id": "e1", "saison_id": "s1", "type": "1v1", "categorie": "limite", "format": "scellé",
+      "participants": [
+        { "joueur_id": "j3", "deck_id": null, "resultat": "V" },
+        { "joueur_id": "j4", "deck_id": null, "resultat": "D" }
+      ] },
+
+    { "id": "p4", "soiree_id": "e2", "saison_id": "s1", "type": "pod", "format": "commander",
+      "participants": [
+        { "joueur_id": "j2", "deck_id": "d2", "place": 1 },
+        { "joueur_id": "j3", "deck_id": "d3", "place": 2 },
+        { "joueur_id": "j5", "deck_id": "d5", "place": 3 }
+      ] },
+    { "id": "p5", "soiree_id": "e2", "saison_id": "s1", "type": "1v1", "categorie": "construit", "format": "pauper",
+      "participants": [
+        { "joueur_id": "j1", "deck_id": null, "resultat": "V" },
+        { "joueur_id": "j3", "deck_id": null, "resultat": "D" }
+      ] },
+    { "id": "p6", "soiree_id": "e2", "saison_id": "s1", "type": "1v1", "categorie": "construit", "format": "pauper",
+      "participants": [
+        { "joueur_id": "j4", "deck_id": null, "resultat": "V" },
+        { "joueur_id": "j2", "deck_id": null, "resultat": "D" }
+      ] },
+
+    { "id": "p7", "soiree_id": "e3", "saison_id": "s1", "type": "pod", "format": "commander",
+      "participants": [
+        { "joueur_id": "j1", "deck_id": "d1", "place": 2 },
+        { "joueur_id": "j4", "deck_id": "d4", "place": 1 },
+        { "joueur_id": "j5", "deck_id": "d5", "place": 3 },
+        { "joueur_id": "j2", "deck_id": "d2", "place": 4 }
+      ] },
+    { "id": "p8", "soiree_id": "e3", "saison_id": "s1", "type": "1v1", "categorie": "limite", "format": "draft",
+      "participants": [
+        { "joueur_id": "j1", "deck_id": null, "resultat": "V" },
+        { "joueur_id": "j5", "deck_id": null, "resultat": "D" }
+      ] },
+    { "id": "p9", "soiree_id": "e3", "saison_id": "s1", "type": "1v1", "categorie": "construit", "format": "pauper",
+      "participants": [
+        { "joueur_id": "j3", "deck_id": null, "resultat": "V" },
+        { "joueur_id": "j5", "deck_id": null, "resultat": "D" }
+      ] }
+  ]
+}

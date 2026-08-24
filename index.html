@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1a1410">
+<title>La Jurande — ligue MTG</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="mana-strip"><i class="w"></i><i class="u"></i><i class="b"></i><i class="r"></i><i class="g"></i></div>
+<header class="top">
+  <div class="wordmark">La Jurande</div>
+  <div class="tagline">ligue Magic</div>
+</header>
+
+<nav role="tablist" id="nav">
+  <button role="tab" aria-selected="true"  data-p="classement">Classement</button>
+  <button role="tab" aria-selected="false" data-p="historique">Historique</button>
+  <button role="tab" aria-selected="false" data-p="joueurs">Joueurs</button>
+  <button role="tab" aria-selected="false" data-p="saisie">Saisie <span class="badge" id="badge-saisie"></span></button>
+  <button role="tab" aria-selected="false" data-p="reglages">Réglages</button>
+</nav>
+
+<main>
+  <section id="view"></section>
+</main>
+
+<footer class="pied">La Jurande — ligue Magic · classements recalculés côté navigateur · données publiques sur GitHub</footer>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
