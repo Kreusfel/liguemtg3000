@@ -1,12 +1,13 @@
 // joueurs.js — annuaire des joueurs (cartes) et fiche détaillée au clic :
 // courbe d'ELO, couleurs jouées, deck le plus victorieux, head-to-head.
 
-import { getModel, decksDe } from '../store.js';
+import { getModel, decksDe, upsertJoueur, removeJoueur, refsJoueur } from '../store.js';
 import { classementElo, classementCommander, eloTimeline, faceAFace } from '../ranking.js';
 import { esc, pct, r0, sparkline } from '../util.js';
 import { deckPlays, couleursDominantes, manaGradient } from './_shared.js';
 
 let selJoueur = null;   // fiche ouverte (null = grille)
+let editJoueur = false; // mode édition sur la fiche ouverte
 
 export function renderJoueurs(container, ctx) {
   const model = getModel();
@@ -56,6 +57,9 @@ function renderGrille(container, ctx, model) {
   container.innerHTML = `
     <h1>Joueurs — ${model.joueurs.length}</h1>
     <p class="sub">Clique sur un joueur pour sa fiche détaillée (courbe d'ELO, couleurs, head-to-head).</p>
+    <div class="ajout-inline" style="margin-bottom:18px">
+      <input type="text" id="jo-nom" placeholder="Nom du joueur"><button class="btn" id="jo-add">Ajouter un joueur</button>
+    </div>
     <div class="joueur-grid">${cartes || '<div class="empty">Aucun joueur.</div>'}</div>
 
     <h2>Face-à-face 1v1 — tableau croisé</h2>
@@ -63,8 +67,15 @@ function renderGrille(container, ctx, model) {
     ${h2hMatrix(model)}
   `;
 
+  const add = () => {
+    const nom = container.querySelector('#jo-nom').value.trim();
+    if (!nom) return;
+    upsertJoueur({ nom }); ctx.toast('Joueur ajouté.'); ctx.refresh();
+  };
+  container.querySelector('#jo-add').onclick = add;
+  container.querySelector('#jo-nom').onkeydown = (e) => { if (e.key === 'Enter') add(); };
   container.querySelectorAll('.jc-clic').forEach((el) => {
-    el.onclick = () => { selJoueur = el.dataset.joueur; ctx.refresh(); };
+    el.onclick = () => { selJoueur = el.dataset.joueur; editJoueur = false; ctx.refresh(); };
   });
 }
 
@@ -114,12 +125,28 @@ function renderFiche(container, ctx, model) {
     .sort((a, b) => b.victoires - a.victoires || b.winrate - a.winrate);
   const topVict = cmdDecks.find((d) => d.victoires > 0) || null;
 
+  const enTete = editJoueur
+    ? `<div class="titre-ligne">
+        <button class="btn btn-mini" id="fiche-retour">← Joueurs</button>
+        <input type="text" id="j-nom" value="${esc(j.nom)}" style="width:auto;font-size:16px">
+        <label class="chk" style="display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;color:var(--ink);margin:0;width:auto;font-weight:700"><input type="checkbox" id="j-actif" ${j.actif !== false ? 'checked' : ''} style="width:auto"> actif</label>
+        <div class="tl-controls">
+          <button class="btn btn-mini btn-noir" id="j-save">Enregistrer</button>
+          <button class="btn btn-mini" id="j-cancel">Annuler</button>
+        </div>
+      </div>`
+    : `<div class="titre-ligne">
+        <button class="btn btn-mini" id="fiche-retour">← Joueurs</button>
+        <h1 style="margin:0">${esc(j.nom)}</h1>
+        ${j.actif !== false ? '' : '<span class="inactif" style="color:var(--muted)">inactif</span>'}
+        <div class="tl-controls">
+          <button class="btn btn-mini" id="j-edit">Modifier</button>
+          <button class="btn btn-mini" id="j-del">Supprimer</button>
+        </div>
+      </div>`;
+
   container.innerHTML = `
-    <div class="titre-ligne">
-      <button class="btn btn-mini" id="fiche-retour">← Joueurs</button>
-      <h1 style="margin:0">${esc(j.nom)}</h1>
-      ${j.actif !== false ? '' : '<span class="inactif" style="color:var(--muted)">inactif</span>'}
-    </div>
+    ${enTete}
 
     <div class="fiche-stats">
       ${carteElo('⚔️ ELO Construit', eloC, tlC, 'var(--u)')}
@@ -149,7 +176,24 @@ function renderFiche(container, ctx, model) {
     ${decksBloc(cmdDecks, decks, plays)}
   `;
 
-  container.querySelector('#fiche-retour').onclick = () => { selJoueur = null; ctx.refresh(); };
+  container.querySelector('#fiche-retour').onclick = () => { selJoueur = null; editJoueur = false; ctx.refresh(); };
+  if (editJoueur) {
+    container.querySelector('#j-cancel').onclick = () => { editJoueur = false; ctx.refresh(); };
+    container.querySelector('#j-save').onclick = () => {
+      const nom = container.querySelector('#j-nom').value.trim();
+      if (!nom) return ctx.toast('Nom requis.');
+      upsertJoueur({ id: j.id, nom, actif: container.querySelector('#j-actif').checked });
+      editJoueur = false; ctx.toast('Joueur modifié.'); ctx.refresh();
+    };
+  } else {
+    container.querySelector('#j-edit').onclick = () => { editJoueur = true; ctx.refresh(); };
+    container.querySelector('#j-del').onclick = () => {
+      const n = refsJoueur(j.id);
+      if (n) return ctx.toast(`Impossible : joueur utilisé dans ${n} deck(s)/partie(s).`);
+      if (!confirm('Supprimer ce joueur ?')) return;
+      removeJoueur(j.id); selJoueur = null; ctx.toast('Joueur supprimé.'); ctx.refresh();
+    };
+  }
 }
 
 function carteElo(titre, stat, serie, stroke) {
