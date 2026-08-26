@@ -5,7 +5,7 @@
 import { getModel, upsertDeck, removeDeck, refsDeck } from '../store.js';
 import { classementCommander } from '../ranking.js';
 import { esc, pct } from '../util.js';
-import { optJoueurs, optJoueursSel, parseCouleurs, deckPlays, manaGradient } from './_shared.js';
+import { optJoueurs, optJoueursSel, parseCouleurs, deckPlays, manaGradient } from './shared.js';
 
 let editDeck = null;   // id du deck en cours d'édition (null = aucun)
 

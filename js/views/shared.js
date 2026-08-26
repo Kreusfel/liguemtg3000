@@ -1,4 +1,4 @@
-// _shared.js — briques réutilisées par plusieurs vues (saisie, historique,
+// shared.js — briques réutilisées par plusieurs vues (saisie, historique,
 // joueurs, decks) : options de <select>, lignes de pod (avec prêt de deck),
 // et petits calculs sur les couleurs/decks.
 

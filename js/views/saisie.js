@@ -7,7 +7,7 @@ import * as store from '../store.js';
 import { publier, peutPublier } from '../github.js';
 import { classementCommander, classementElo } from '../ranking.js';
 import { esc, dateFr, today } from '../util.js';
-import { optSaisons, optSoirees, rowPod, creerRow, brancherPodRow } from './_shared.js';
+import { optSaisons, optSoirees, rowPod, creerRow, brancherPodRow } from './shared.js';
 
 export function renderSaisie(container, ctx) {
   const model = store.getModel();
