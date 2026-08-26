@@ -1,0 +1,152 @@
+{
+  "version": 1,
+  "titre": "La Jurande",
+  "joueurs": [
+    {
+      "nom": "Kreusfel",
+      "id": "j47707375",
+      "actif": true
+    },
+    {
+      "nom": "Soil",
+      "id": "j56895479",
+      "actif": true
+    },
+    {
+      "nom": "Jérémie",
+      "id": "j14552426",
+      "actif": true
+    }
+  ],
+  "decks": [
+    {
+      "joueur_id": "j47707375",
+      "nom": "Markov",
+      "commandant": "Edgar Markov",
+      "couleurs": [
+        "W",
+        "B",
+        "R"
+      ],
+      "format": "commander",
+      "id": "d13637344",
+      "actif": true
+    },
+    {
+      "joueur_id": "j47707375",
+      "nom": "Chocobo",
+      "commandant": "Chocobo",
+      "couleurs": [
+        "W",
+        "U",
+        "G"
+      ],
+      "format": "commander",
+      "id": "d86164452",
+      "actif": true
+    },
+    {
+      "joueur_id": "j47707375",
+      "nom": "Flées",
+      "commandant": "Machin Fées + Elfes",
+      "couleurs": [
+        "U",
+        "B",
+        "G"
+      ],
+      "format": "commander",
+      "id": "d80888924",
+      "actif": true
+    },
+    {
+      "joueur_id": "j14552426",
+      "nom": "KembalKani",
+      "commandant": "Kembal",
+      "couleurs": [
+        "W",
+        "B"
+      ],
+      "format": "commander",
+      "id": "d00687974",
+      "actif": true
+    },
+    {
+      "joueur_id": "j56895479",
+      "nom": "Maxy Meule",
+      "commandant": "Chef de la ville",
+      "couleurs": [
+        "B"
+      ],
+      "format": "commander",
+      "id": "d46568758",
+      "actif": true
+    },
+    {
+      "joueur_id": "j56895479",
+      "nom": "Prospero",
+      "commandant": "Prospert",
+      "couleurs": [
+        "B",
+        "R"
+      ],
+      "format": "commander",
+      "id": "d55873081",
+      "actif": true
+    },
+    {
+      "joueur_id": "j56895479",
+      "nom": "Purforos",
+      "commandant": "Purforos",
+      "couleurs": [
+        "R"
+      ],
+      "format": "commander",
+      "id": "d13981337",
+      "actif": true
+    }
+  ],
+  "saisons": [
+    {
+      "nom": "2026-2027",
+      "active": true,
+      "debut": "2026-08-26",
+      "fin": null,
+      "id": "s84399232"
+    }
+  ],
+  "soirees": [
+    {
+      "date": "2026-08-26",
+      "lieu": "Jurande",
+      "saison_id": "s84399232",
+      "notes": "",
+      "id": "e41801404"
+    }
+  ],
+  "parties": [
+    {
+      "soiree_id": "e41801404",
+      "type": "pod",
+      "format": "commander",
+      "participants": [
+        {
+          "joueur_id": "j47707375",
+          "deck_id": "d13637344",
+          "place": 3
+        },
+        {
+          "joueur_id": "j14552426",
+          "deck_id": "d00687974",
+          "place": 2
+        },
+        {
+          "joueur_id": "j56895479",
+          "deck_id": "d46568758",
+          "place": 1
+        }
+      ],
+      "id": "p12394500",
+      "saison_id": "s84399232"
+    }
+  ]
+}
