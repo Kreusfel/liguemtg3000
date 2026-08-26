@@ -88,7 +88,7 @@ jurande/
     ├── github.js         # publication via API GitHub (token, Contents API)
     ├── ranking.js        # ELO ×2 + points Commander (joueur/deck)
     ├── util.js           # helpers + sparkline SVG
-    └── views/            # _shared (briques communes) + classement, historique,
+    └── views/            # shared (briques communes) + classement, historique,
                           #   joueurs, decks, rivalites, saisie, reglages
 ```
 

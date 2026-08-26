@@ -6,7 +6,7 @@ import {
   updateSoiree, removeSoiree, updatePartie, removePartie,
 } from '../store.js';
 import { esc, dateFr } from '../util.js';
-import { optJoueursSel, optSoirees, rowPod, creerRow, brancherPodRow } from './_shared.js';
+import { optJoueursSel, optSoirees, rowPod, creerRow, brancherPodRow } from './shared.js';
 
 const filtre = { joueur: '', type: '', saison: '', format: '' };
 const editing = { soiree: null, partie: null };   // survit aux refresh

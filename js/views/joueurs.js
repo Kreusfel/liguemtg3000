@@ -4,7 +4,7 @@
 import { getModel, decksDe, upsertJoueur, removeJoueur, refsJoueur } from '../store.js';
 import { classementElo, classementCommander, eloTimeline, faceAFace } from '../ranking.js';
 import { esc, pct, r0, sparkline } from '../util.js';
-import { deckPlays, couleursDominantes, manaGradient } from './_shared.js';
+import { deckPlays, couleursDominantes, manaGradient } from './shared.js';
 
 let selJoueur = null;   // fiche ouverte (null = grille)
 let editJoueur = false; // mode édition sur la fiche ouverte
