@@ -6,7 +6,7 @@
 //
 // Pour publier une MAJ du code : incrémenter CACHE.
 
-const CACHE = 'jurande-v4';
+const CACHE = 'jurande-v5';
 const ASSETS = [
   '.', 'index.html', 'manifest.webmanifest',
   'css/styles.css',
