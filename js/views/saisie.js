@@ -39,6 +39,7 @@ export function renderSaisie(container, ctx) {
       ${gestionSaisons(model)}
     </div>
     ${gestionDecks(model)}
+    ${gestionSoirees(model)}
   `;
 
   wirePublication(container, ctx);
@@ -594,6 +595,22 @@ function ligneDeck(d, model) {
     </span></li>`;
 }
 
+function gestionSoirees(model) {
+  const sn = Object.fromEntries(model.saisons.map((s) => [s.id, s.nom]));
+  const list = store.soirees();
+  return `<div class="form-card">
+    <h2>Soirées</h2>
+    <p class="mini">Créées via « Nouvelle soirée » plus haut. Supprimer une soirée retire aussi <b>toutes ses parties</b>.</p>
+    <ul class="mini-list">${list.map((e) => {
+      const n = store.partiesDe(e.id).length;
+      return `<li data-id="${e.id}">
+        <span class="ml-lib">${dateFr(e.date)}${e.lieu ? ' · ' + esc(e.lieu) : ''} <small>${esc(sn[e.saison_id] || 'sans saison')} · ${n} partie${n > 1 ? 's' : ''}</small></span>
+        <span class="ml-actions"><button class="btn btn-mini" data-act="so-del">Supprimer</button></span>
+      </li>`;
+    }).join('') || '<li class="empty">aucune</li>'}</ul>
+  </div>`;
+}
+
 function wireGestion(container, ctx, model) {
   container.querySelector('#jo-add').onclick = () => {
     const nom = container.querySelector('#jo-nom').value.trim();
@@ -693,6 +710,12 @@ function actionGestion(btn, container, ctx, model) {
     }
     case 'sa-rouvrir': {
       store.rouvrirSaison(id); ctx.toast('Saison rouverte.'); ctx.refresh(); break;
+    }
+    // --- soirées ---
+    case 'so-del': {
+      const n = store.partiesDe(id).length;
+      if (!confirm(n ? `Supprimer cette soirée et ses ${n} partie${n > 1 ? 's' : ''} ?` : 'Supprimer cette soirée ?')) return;
+      store.removeSoiree(id); ctx.toast('Soirée supprimée.'); ctx.refresh(); break;
     }
   }
 }
