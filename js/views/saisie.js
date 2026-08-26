@@ -20,7 +20,10 @@ export function renderSaisie(container, ctx) {
         <div><label>Lieu</label><input type="text" id="so-lieu" placeholder="Chez… / boutique"></div>
         <div><label>Saison</label><select id="so-saison">${optSaisons(model)}</select></div>
       </div>
-      <div style="margin-top:14px"><button class="btn btn-noir" id="so-add">Créer la soirée</button></div>
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-noir" id="so-add">Créer la soirée</button>
+        <button class="btn" id="so-dup" title="Recrée une soirée (même lieu/saison, aujourd'hui) et pré-coche les présents de la dernière">⧉ Dupliquer la dernière</button>
+      </div>
     </div>
 
     <h2>Saisie des parties</h2>
@@ -119,6 +122,9 @@ function wirePublication(container, ctx) {
 }
 
 // --- soirée -----------------------------------------------------------------
+// Présents à pré-cocher dans le prochain formulaire 1v1 (après duplication).
+let presetPresents = [];
+
 function wireSoiree(container, ctx) {
   container.querySelector('#so-add').onclick = () => {
     const date = container.querySelector('#so-date').value;
@@ -127,6 +133,14 @@ function wireSoiree(container, ctx) {
     if (!date) return ctx.toast('Renseigne une date.');
     store.addSoiree({ date, lieu, saison_id, notes: '' });
     ctx.toast('Soirée créée.');
+    ctx.refresh();
+  };
+  container.querySelector('#so-dup').onclick = () => {
+    const derniere = store.soirees()[0];   // la plus récente
+    if (!derniere) return ctx.toast('Aucune soirée à dupliquer.');
+    store.addSoiree({ date: today(), lieu: derniere.lieu || '', saison_id: derniere.saison_id || null, notes: '' });
+    presetPresents = [...new Set(store.partiesDe(derniere.id).flatMap((p) => p.participants.map((x) => x.joueur_id)))];
+    ctx.toast(presetPresents.length ? 'Soirée dupliquée — présents pré-cochés (onglets 1v1).' : 'Soirée dupliquée.');
     ctx.refresh();
   };
 }
@@ -194,6 +208,12 @@ function wire1v1(container, ctx, model, cat) {
   const matchs = container.querySelector('#li-matchs');
   const save = container.querySelector('#li-save');
   const info = container.querySelector('#li-info');
+
+  // Présents pré-cochés après une duplication de soirée (one-shot).
+  if (presetPresents.length) {
+    container.querySelectorAll('#li-joueurs input').forEach((i) => { if (presetPresents.includes(i.value)) i.checked = true; });
+    presetPresents = [];
+  }
 
   container.querySelector('#li-gen').onclick = () => {
     const ids = [...container.querySelectorAll('#li-joueurs input:checked')].map((i) => i.value);
