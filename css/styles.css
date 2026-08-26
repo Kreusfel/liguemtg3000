@@ -134,6 +134,26 @@ tr.podium-3{background:#fdf3e9 !important}
 /* ---------- joueurs ---------- */
 .joueur-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
 .joueur-card{background:var(--panel);border-radius:var(--rc);box-shadow:var(--shadow);overflow:hidden}
+.jc-clic{cursor:pointer;transition:transform .1s,box-shadow .15s}
+.jc-clic:hover{transform:translateY(-3px);box-shadow:0 2px 0 var(--line2),0 16px 30px rgba(42,33,64,.16)}
+
+/* fiche joueur */
+.fiche-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:18px 0 8px}
+.fiche-stats .rc-val{font-size:24px}
+.spark{width:100%;height:40px;margin-top:8px;display:block;overflow:visible}
+.pips-ligne{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 8px}
+.mana-pip{display:inline-flex;align-items:center;gap:6px;font-family:'Fredoka',sans-serif;font-weight:700;
+  color:#fff;padding:6px 13px;border-radius:var(--rp);font-size:14px;box-shadow:var(--shadow)}
+.mana-pip b{font-family:'IBM Plex Mono',monospace;font-weight:600}
+.mana-pip.mana-w{background:var(--w);color:#5a4a10}
+.mana-pip.mana-u{background:var(--u)}.mana-pip.mana-b{background:var(--b)}
+.mana-pip.mana-r{background:var(--r)}.mana-pip.mana-g{background:var(--g)}
+.mana-dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:3px;vertical-align:middle;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.mana-dot.mana-w{background:var(--w)}.mana-dot.mana-u{background:var(--u)}.mana-dot.mana-b{background:var(--b)}
+.mana-dot.mana-r{background:var(--r)}.mana-dot.mana-g{background:var(--g)}
+.h2h-pos{color:var(--g);font-weight:800}
+.h2h-neg{color:var(--r);font-weight:800}
 .jc-head{background:linear-gradient(120deg,#7a4bd0,#9a6ae8);color:#fff;padding:12px 16px;font-family:'Fredoka',sans-serif;
   font-weight:600;font-size:17px}
 .jc-head .inactif{font-size:11px;color:#e3d6ff;font-family:'IBM Plex Mono',monospace}

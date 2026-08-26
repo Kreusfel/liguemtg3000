@@ -73,6 +73,62 @@ export function classementElo(model, categorie, saisonId = null) {
   }).sort((a, b) => b.rating - a.rating);
 }
 
+// Évolution du rating ELO dans le temps (pour les sparklines / courbes).
+// Renvoie { joueur_id: [ELO_DEBUT, r1, r2, ...] } dans l'ordre chronologique,
+// pour une catégorie donnée et une saison (null = toutes).
+export function eloTimeline(model, categorie, saisonId = null) {
+  const idx = index(model);
+  const parties = model.parties
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => p.type === '1v1' && p.categorie === categorie
+      && (!saisonId || p.saison_id === saisonId) && p.participants.length === 2)
+    .sort((a, b) => {
+      const da = dateDe(idx, a.p), db = dateDe(idx, b.p);
+      return da < db ? -1 : da > db ? 1 : a.i - b.i;
+    });
+
+  const rating = {};
+  const series = {};
+  const get = (id) => (id in rating ? rating[id] : ELO_DEBUT);
+  const seed = (id) => { if (!series[id]) series[id] = [ELO_DEBUT]; };
+
+  for (const { p } of parties) {
+    const [A, B] = p.participants;
+    const sa = A.resultat === 'V' ? 1 : A.resultat === 'N' ? 0.5 : 0;
+    const sb = 1 - sa;
+    const ra = get(A.joueur_id), rb = get(B.joueur_id);
+    rating[A.joueur_id] = ra + ELO_K * (sa - esperance(ra, rb));
+    rating[B.joueur_id] = rb + ELO_K * (sb - esperance(rb, ra));
+    seed(A.joueur_id); seed(B.joueur_id);
+    series[A.joueur_id].push(rating[A.joueur_id]);
+    series[B.joueur_id].push(rating[B.joueur_id]);
+  }
+  return series;
+}
+
+// Face-à-face 1v1 (toutes catégories confondues) : h[a][b] = {v,d,n,total}
+// du point de vue de a. Pour une saison (null = toutes).
+export function faceAFace(model, saisonId = null) {
+  const h = {};
+  const paire = (a, b) => {
+    if (!h[a]) h[a] = {};
+    if (!h[a][b]) h[a][b] = { v: 0, d: 0, n: 0, total: 0 };
+    return h[a][b];
+  };
+  for (const p of model.parties) {
+    if (p.type !== '1v1' || p.participants.length !== 2) continue;
+    if (saisonId && p.saison_id !== saisonId) continue;
+    const [A, B] = p.participants;
+    if (!A.joueur_id || !B.joueur_id) continue;
+    const ab = paire(A.joueur_id, B.joueur_id), ba = paire(B.joueur_id, A.joueur_id);
+    ab.total++; ba.total++;
+    if (A.resultat === 'V') { ab.v++; ba.d++; }
+    else if (A.resultat === 'D') { ab.d++; ba.v++; }
+    else { ab.n++; ba.n++; }
+  }
+  return h;
+}
+
 // --- Commander multi (points, Joueur & Deck) --------------------------------
 function agrege(map, cle, entite, win) {
   const e = map[cle] || (map[cle] = { entite, parties: 0, victoires: 0, points: 0 });
