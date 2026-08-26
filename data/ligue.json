@@ -147,6 +147,78 @@
       ],
       "id": "p12394500",
       "saison_id": "s84399232"
+    },
+    {
+      "soiree_id": "e41801404",
+      "type": "pod",
+      "format": "commander",
+      "participants": [
+        {
+          "joueur_id": "j47707375",
+          "deck_id": "d86164452",
+          "place": 3
+        },
+        {
+          "joueur_id": "j56895479",
+          "deck_id": "d55873081",
+          "place": 2
+        },
+        {
+          "joueur_id": "j14552426",
+          "deck_id": "d00687974",
+          "place": 1
+        }
+      ],
+      "id": "p00138134",
+      "saison_id": "s84399232"
+    },
+    {
+      "soiree_id": "e41801404",
+      "type": "pod",
+      "format": "commander",
+      "participants": [
+        {
+          "joueur_id": "j47707375",
+          "deck_id": "d80888924",
+          "place": 3
+        },
+        {
+          "joueur_id": "j56895479",
+          "deck_id": "d55873081",
+          "place": 1
+        },
+        {
+          "joueur_id": "j14552426",
+          "deck_id": "d00687974",
+          "place": 2
+        }
+      ],
+      "id": "p66522168",
+      "saison_id": "s84399232"
+    },
+    {
+      "soiree_id": "e41801404",
+      "type": "pod",
+      "format": "commander",
+      "participants": [
+        {
+          "joueur_id": "j47707375",
+          "deck_id": "d80888924",
+          "place": 3
+        },
+        {
+          "joueur_id": "j56895479",
+          "deck_id": "d55873081",
+          "place": 2
+        },
+        {
+          "joueur_id": "j14552426",
+          "deck_id": "d00687974",
+          "place": 1
+        }
+      ],
+      "id": "p19429971",
+      "saison_id": "s84399232"
     }
   ]
 }
