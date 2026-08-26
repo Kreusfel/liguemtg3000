@@ -27,6 +27,19 @@ export function renderClassement(container, ctx) {
   const cmd = classementCommander(model, sid);
   const cmdJ = filtreActifs(cmd.joueurs, 'entite');
 
+  const soireesSaison = model.soirees.filter((e) => !sid || e.saison_id === sid);
+  const partiesSaison = model.parties.filter((p) => !sid || p.saison_id === sid);
+  const podsN = partiesSaison.filter((p) => p.type === 'pod').length;
+  const resume = {
+    soirees: soireesSaison.length,
+    parties: partiesSaison.length,
+    pods: podsN,
+    duels: partiesSaison.length - podsN,
+    topCmd: cmdJ[0],
+    topConstruit: eloC[0],
+    topLimite: eloL[0],
+  };
+
   container.innerHTML = `
     <div class="titre-ligne">
       <h1>Classement</h1>
@@ -39,6 +52,8 @@ export function renderClassement(container, ctx) {
       </div>
     </div>
     <p class="sub">Classements recalculés en direct depuis les résultats. L'ELO Construit et l'ELO Limité sont indépendants.</p>
+
+    ${resumeSaison(resume)}
 
     <div class="deux-col">
       <div>${tableElo('⚔️ ELO — Construit', eloC, 'u')}</div>
@@ -57,6 +72,25 @@ export function renderClassement(container, ctx) {
 }
 
 function medaille(i) { return i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1; }
+
+// Bandeau de synthèse de la saison sélectionnée.
+function resumeSaison(r) {
+  const leader = (l, metric) => l
+    ? `${esc((l.joueur || l.entite).nom)} <small>${metric}</small>`
+    : '<span class="rc-vide">—</span>';
+  const cards = [
+    { lib: 'Soirées', val: r.soirees },
+    { lib: 'Parties', val: r.parties, sub: `${r.pods} Commander · ${r.duels} 1v1` },
+    { lib: '👑 Commander', val: leader(r.topCmd, r.topCmd ? `${r.topCmd.points} pts` : '') },
+    { lib: '⚔️ ELO Construit', val: leader(r.topConstruit, r.topConstruit ? r0(r.topConstruit.rating) : '') },
+    { lib: '🎲 ELO Limité', val: leader(r.topLimite, r.topLimite ? r0(r.topLimite.rating) : '') },
+  ];
+  return `<div class="resume">${cards.map((c) => `<div class="rcard">
+    <span class="rc-lib">${c.lib}</span>
+    <b class="rc-val">${c.val}</b>
+    ${c.sub ? `<span class="rc-sub">${c.sub}</span>` : ''}
+  </div>`).join('')}</div>`;
+}
 
 function tableElo(titre, lignes, cls = '') {
   const corps = lignes.length ? lignes.map((l, i) => `

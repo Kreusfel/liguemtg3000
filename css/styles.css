@@ -67,6 +67,16 @@ h2{font-family:'Fredoka',sans-serif;font-size:19px;font-weight:600;margin:30px 0
 .deux-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 @media(max-width:820px){.deux-col{grid-template-columns:1fr}}
 
+/* résumé de saison (Classement) */
+.resume{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:0 0 24px}
+.rcard{background:var(--panel);border-radius:var(--rc);box-shadow:var(--shadow);padding:13px 16px;
+  display:flex;flex-direction:column;gap:4px}
+.rc-lib{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+.rc-val{font-family:'Fredoka',sans-serif;font-size:20px;color:var(--accent-d);line-height:1.15}
+.rc-val small{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);font-weight:400}
+.rc-sub{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)}
+.rc-vide{color:var(--line2)}
+
 /* ---------- blocs / cartes ---------- */
 .bloc{background:var(--panel);border-radius:var(--rc);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
 .bloc-head{padding:13px 16px;font-family:'Fredoka',sans-serif;font-weight:600;font-size:15px;color:#fff;
