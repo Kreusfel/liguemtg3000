@@ -28,7 +28,7 @@ export function renderSaisie(container, ctx) {
     <div id="saisie-panel"></div>
 
     <h2>Dernières parties saisies</h2>
-    ${listeRecentes(model)}
+    <div id="recentes-zone">${recentesZone(model)}</div>
 
     <div class="deux-col">
       ${gestionJoueurs(model)}
@@ -42,7 +42,7 @@ export function renderSaisie(container, ctx) {
   wireSaisieTabs(container, ctx, model);
   renderPanel(container, ctx, model);
   wireGestion(container, ctx, model);
-  wireRecentes(container, ctx);
+  wireRecentes(container, ctx, model);
 }
 
 // --- onglets de saisie (un type de partie à la fois) ------------------------
@@ -308,6 +308,16 @@ function wireCommander(container, ctx, model) {
 }
 
 // --- parties récentes -------------------------------------------------------
+// La zone bascule entre la liste et le formulaire d'édition d'une partie.
+function recentesZone(model) {
+  if (editing.partie) {
+    const p = model.parties.find((x) => x.id === editing.partie);
+    if (p) return formEditPartie(model, p);
+    editing.partie = null;   // partie disparue : retour liste
+  }
+  return listeRecentes(model);
+}
+
 function listeRecentes(model) {
   const jn = Object.fromEntries(model.joueurs.map((j) => [j.id, j.nom]));
   const recentes = model.parties.slice(-8).reverse();
@@ -321,21 +331,126 @@ function listeRecentes(model) {
         : p.participants.map((x) => `${esc(jn[x.joueur_id] || '?')} (${x.resultat})`).join(' vs ');
       return `<tr><td><span class="ptag ptag-${p.type === 'pod' ? 'pod' : p.categorie}">${label}</span></td>
         <td>${detail}</td>
-        <td class="actions"><button class="btn btn-mini" data-del-partie="${p.id}">Supprimer</button></td></tr>`;
+        <td class="actions">
+          <button class="btn btn-mini" data-edit-partie="${p.id}">Modifier</button>
+          <button class="btn btn-mini" data-del-partie="${p.id}">Supprimer</button>
+        </td></tr>`;
     }).join('')}</tbody>
   </table></div>`;
 }
-function wireRecentes(container, ctx) {
+
+// Formulaire d'édition d'une partie (pod ou 1v1).
+function formEditPartie(model, p) {
+  if (p.type === 'pod') {
+    return `<div class="form-card" id="edit-partie">
+      <h3>Modifier un pod Commander</h3>
+      <div class="fgrid"><div><label>Soirée</label><select id="ep-soiree">${optSoirees(model)}</select></div></div>
+      <div class="pod-rows" id="ep-rows">${p.participants.map(() => rowPod(model)).join('')}</div>
+      <button class="btn btn-mini" id="ep-add-row" type="button">+ joueur</button>
+      <div class="hint">Place 1 = vainqueur du pod.</div>
+      <div style="margin-top:14px;display:flex;gap:8px">
+        <button class="btn btn-noir" id="ep-save">Enregistrer</button>
+        <button class="btn" id="ep-cancel">Annuler</button>
+      </div>
+    </div>`;
+  }
+  const isLim = p.categorie === 'limite';
+  const [A, B] = p.participants;
+  const res = A.resultat === 'V' ? 'A' : A.resultat === 'D' ? 'B' : 'N';
+  return `<div class="form-card" id="edit-partie">
+    <h3>Modifier un match 1v1</h3>
+    <div class="fgrid">
+      <div><label>Soirée</label><select id="ep-soiree">${optSoirees(model)}</select></div>
+      <div><label>Catégorie</label><select id="ep-cat">
+        <option value="construit" ${!isLim ? 'selected' : ''}>Construit</option>
+        <option value="limite" ${isLim ? 'selected' : ''}>Limité</option></select></div>
+      <div><label>Format</label><input type="text" id="ep-format" value="${esc(p.format || '')}"></div>
+    </div>
+    <div class="fgrid" style="margin-top:12px">
+      <div><label>Joueur A</label><select id="ep-a">${optJoueursSel(model, A.joueur_id)}</select></div>
+      <div><label>Joueur B</label><select id="ep-b">${optJoueursSel(model, B.joueur_id)}</select></div>
+      <div><label>Résultat</label><select id="ep-res">
+        <option value="A" ${res === 'A' ? 'selected' : ''}>A gagne</option>
+        <option value="B" ${res === 'B' ? 'selected' : ''}>B gagne</option>
+        <option value="N" ${res === 'N' ? 'selected' : ''}>Nul</option></select></div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="btn btn-noir" id="ep-save">Enregistrer</button>
+      <button class="btn" id="ep-cancel">Annuler</button>
+    </div>
+  </div>`;
+}
+
+function wireRecentes(container, ctx, model) {
   container.querySelectorAll('[data-del-partie]').forEach((b) => {
     b.onclick = () => { store.removePartie(b.dataset.delPartie); ctx.toast('Partie supprimée.'); ctx.refresh(); };
   });
+  container.querySelectorAll('[data-edit-partie]').forEach((b) => {
+    b.onclick = () => { editing.partie = b.dataset.editPartie; ctx.refresh(); };
+  });
+  const zone = container.querySelector('#edit-partie');
+  if (zone) wireEditPartie(container, ctx, model);
+}
+
+function wireEditPartie(container, ctx, model) {
+  const p = model.parties.find((x) => x.id === editing.partie);
+  if (!p) return;
+  container.querySelector('#ep-soiree').value = p.soiree_id;
+  const cancel = () => { editing.partie = null; ctx.refresh(); };
+  container.querySelector('#ep-cancel').onclick = cancel;
+
+  if (p.type === 'pod') {
+    // Pré-remplit chaque ligne (joueur -> decks du joueur -> deck -> place).
+    const rows = [...container.querySelectorAll('#ep-rows .pod-row')];
+    rows.forEach((row, i) => {
+      const part = p.participants[i];
+      row.querySelector('.pr-joueur').value = part.joueur_id || '';
+      brancherPodRow(row);
+      row.querySelector('.pr-deck').value = part.deck_id || '';
+      if (part.place != null) row.querySelector('.pr-place').value = part.place;
+    });
+    container.querySelector('#ep-add-row').onclick = () => {
+      const row = creerRow(rowPod(model));
+      container.querySelector('#ep-rows').appendChild(row);
+      brancherPodRow(row);
+    };
+    container.querySelector('#ep-save').onclick = () => {
+      const participants = [];
+      container.querySelectorAll('#ep-rows .pod-row').forEach((row) => {
+        const jid = row.querySelector('.pr-joueur').value;
+        if (!jid) return;
+        const did = row.querySelector('.pr-deck').value || null;
+        const pl = parseInt(row.querySelector('.pr-place').value, 10);
+        participants.push({ joueur_id: jid, deck_id: did, place: Number.isFinite(pl) ? pl : null });
+      });
+      if (participants.length < 2) return ctx.toast('Au moins 2 joueurs dans le pod.');
+      store.updatePartie({ id: p.id, soiree_id: container.querySelector('#ep-soiree').value, participants });
+      editing.partie = null; ctx.toast('Partie modifiée.'); ctx.refresh();
+    };
+  } else {
+    container.querySelector('#ep-save').onclick = () => {
+      const a = container.querySelector('#ep-a').value;
+      const b = container.querySelector('#ep-b').value;
+      if (!a || !b || a === b) return ctx.toast('Choisis deux joueurs différents.');
+      const r = container.querySelector('#ep-res').value;
+      const rA = r === 'A' ? 'V' : r === 'B' ? 'D' : 'N';
+      const rB = r === 'B' ? 'V' : r === 'A' ? 'D' : 'N';
+      store.updatePartie({
+        id: p.id, soiree_id: container.querySelector('#ep-soiree').value,
+        categorie: container.querySelector('#ep-cat').value,
+        format: container.querySelector('#ep-format').value.trim(),
+        participants: [{ joueur_id: a, deck_id: null, resultat: rA }, { joueur_id: b, deck_id: null, resultat: rB }],
+      });
+      editing.partie = null; ctx.toast('Partie modifiée.'); ctx.refresh();
+    };
+  }
 }
 
 // --- gestion joueurs / decks / saisons --------------------------------------
 // Édition inline : `editing` retient l'entité en cours de modification ; il
 // survit aux ctx.refresh() (état module) le temps que l'utilisateur enregistre
 // ou annule.
-const editing = { joueur: null, deck: null, saison: null };
+const editing = { joueur: null, deck: null, saison: null, partie: null };
 
 function gestionJoueurs(model) {
   return `<div class="form-card">

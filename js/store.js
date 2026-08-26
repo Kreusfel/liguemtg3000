@@ -142,6 +142,16 @@ export function removePartie(id) {
   toucher();
 }
 
+// Modifie une partie existante (o.id requis) et réaligne sa saison sur la soirée.
+export function updatePartie(o) {
+  const p = model.parties.find((x) => x.id === o.id);
+  if (!p) return;
+  Object.assign(p, o);
+  const so = model.soirees.find((e) => e.id === p.soiree_id);
+  p.saison_id = so ? so.saison_id : p.saison_id;
+  toucher();
+}
+
 // Ajout par lot (saisie groupée d'une soirée) : une seule persistance.
 export function addParties(list) {
   for (const o of list) {
