@@ -2,79 +2,338 @@
   "version": 1,
   "titre": "La Jurande",
   "joueurs": [
-    { "id": "j1", "nom": "Romain", "actif": true },
-    { "id": "j2", "nom": "Antoine", "actif": true },
-    { "id": "j3", "nom": "Élise", "actif": true },
-    { "id": "j4", "nom": "Marc", "actif": true },
-    { "id": "j5", "nom": "Julien", "actif": true }
+    {
+      "id": "j1",
+      "nom": "Kreusfel",
+      "actif": true
+    },
+    {
+      "nom": "Soil",
+      "id": "j88142855",
+      "actif": true
+    },
+    {
+      "nom": "Jérémie",
+      "id": "j35530694",
+      "actif": true
+    },
+    {
+      "nom": "West",
+      "id": "j37496517",
+      "actif": true
+    },
+    {
+      "nom": "Naru",
+      "id": "j26325323",
+      "actif": true
+    },
+    {
+      "nom": "Zardrakan",
+      "id": "j85444054",
+      "actif": true
+    },
+    {
+      "nom": "Andy",
+      "id": "j70375739",
+      "actif": true
+    },
+    {
+      "nom": "Geralt",
+      "id": "j54637294",
+      "actif": true
+    },
+    {
+      "nom": "Jim",
+      "id": "j51335249",
+      "actif": true
+    },
+    {
+      "nom": "Marsu",
+      "id": "j92770593",
+      "actif": true
+    },
+    {
+      "nom": "Nono",
+      "id": "j00792373",
+      "actif": true
+    }
   ],
   "decks": [
-    { "id": "d1", "joueur_id": "j1", "nom": "Krenko Gobelins", "commandant": "Krenko, Mob Boss", "couleurs": ["R"], "format": "commander", "actif": true },
-    { "id": "d2", "joueur_id": "j2", "nom": "Atraxa Superamis", "commandant": "Atraxa, Praetors' Voice", "couleurs": ["W", "U", "B", "G"], "format": "commander", "actif": true },
-    { "id": "d3", "joueur_id": "j3", "nom": "Yuriko Ninjas", "commandant": "Yuriko, the Tiger's Shadow", "couleurs": ["U", "B"], "format": "commander", "actif": true },
-    { "id": "d4", "joueur_id": "j4", "nom": "Gishath Dinos", "commandant": "Gishath, Sun's Avatar", "couleurs": ["R", "G", "W"], "format": "commander", "actif": true },
-    { "id": "d5", "joueur_id": "j5", "nom": "Chulane Valeur", "commandant": "Chulane, Teller of Tales", "couleurs": ["G", "W", "U"], "format": "commander", "actif": true }
+    {
+      "joueur_id": "j1",
+      "nom": "Jirina Tribal Humain",
+      "commandant": "Jirina Kudro",
+      "couleurs": [
+        "W",
+        "B",
+        "R"
+      ],
+      "format": "commander",
+      "id": "d45292679",
+      "actif": true
+    },
+    {
+      "joueur_id": "j1",
+      "nom": "Urza Tribal Artos",
+      "commandant": "Urza, Chief Artificer",
+      "couleurs": [
+        "W",
+        "U",
+        "B"
+      ],
+      "format": "commander",
+      "id": "d56098608",
+      "actif": true
+    },
+    {
+      "joueur_id": "j1",
+      "nom": "Girtrog",
+      "commandant": "The Gitrog Monster",
+      "couleurs": [
+        "B",
+        "G"
+      ],
+      "format": "commander",
+      "id": "d52485754",
+      "actif": true
+    },
+    {
+      "joueur_id": "j1",
+      "nom": "Daretti Cimetière Artos",
+      "commandant": "Daretti, Scrap Savant",
+      "couleurs": [
+        "R"
+      ],
+      "format": "commander",
+      "id": "d24958790",
+      "actif": true
+    },
+    {
+      "joueur_id": "j1",
+      "nom": "Maralen Control Flée",
+      "commandant": "Maralen, Fae Ascendant",
+      "couleurs": [
+        "U",
+        "B",
+        "G"
+      ],
+      "format": "commander",
+      "id": "d37368529",
+      "actif": true
+    },
+    {
+      "joueur_id": "j35530694",
+      "nom": "Kambal Jetons",
+      "commandant": "Kambal, Profiteering Mayor",
+      "couleurs": [
+        "W",
+        "B"
+      ],
+      "format": "commander",
+      "id": "d27093863",
+      "actif": true
+    },
+    {
+      "joueur_id": "j88142855",
+      "nom": "Master Meule",
+      "commandant": "The Master of Lake-town",
+      "couleurs": [
+        "B"
+      ],
+      "format": "commander",
+      "id": "d55179740",
+      "actif": true
+    },
+    {
+      "joueur_id": "j88142855",
+      "nom": "Prosper Exil",
+      "commandant": "Prosper, Tome-Bound",
+      "couleurs": [
+        "B",
+        "R"
+      ],
+      "format": "commander",
+      "id": "d24922138",
+      "actif": true
+    },
+    {
+      "joueur_id": "j88142855",
+      "nom": "Purphoros ETB Killer",
+      "commandant": "Purphoros, God of the Forge",
+      "couleurs": [
+        "R"
+      ],
+      "format": "commander",
+      "id": "d81276051",
+      "actif": true
+    },
+    {
+      "joueur_id": "j1",
+      "nom": "Edgar Tribal Vampire",
+      "commandant": "Edgar Markov",
+      "couleurs": [
+        "W",
+        "B",
+        "R"
+      ],
+      "format": "commander",
+      "id": "d81211834",
+      "actif": true
+    },
+    {
+      "joueur_id": "j26325323",
+      "nom": "Edgar Tribal Vampire",
+      "commandant": "Edgar Markov",
+      "couleurs": [
+        "W",
+        "B",
+        "R"
+      ],
+      "format": "commander",
+      "id": "d08210445",
+      "actif": true
+    },
+    {
+      "joueur_id": "j1",
+      "nom": "Choco Poulet",
+      "commandant": "Choco, Seeker of Paradise",
+      "couleurs": [
+        "W",
+        "U",
+        "G"
+      ],
+      "format": "commander",
+      "id": "d50489455",
+      "actif": true
+    },
+    {
+      "joueur_id": "j26325323",
+      "nom": "Choco Poulet",
+      "commandant": "Choco, Seeker of Paradise",
+      "couleurs": [
+        "W",
+        "U",
+        "G"
+      ],
+      "format": "commander",
+      "id": "d33580144",
+      "actif": true
+    }
   ],
   "saisons": [
-    { "id": "s1", "nom": "Saison 2026", "debut": "2026-01-01", "fin": null, "active": true }
+    {
+      "id": "s1",
+      "nom": "Saison 2026-2027",
+      "debut": "2026-01-01",
+      "fin": null,
+      "active": true
+    }
   ],
   "soirees": [
-    { "id": "e1", "saison_id": "s1", "date": "2026-06-19", "lieu": "Chez Romain", "notes": "" },
-    { "id": "e2", "saison_id": "s1", "date": "2026-07-17", "lieu": "Boutique", "notes": "" },
-    { "id": "e3", "saison_id": "s1", "date": "2026-08-21", "lieu": "Chez Antoine", "notes": "" }
+    {
+      "date": "2026-08-25",
+      "lieu": "Jurande",
+      "saison_id": "s1",
+      "notes": "",
+      "id": "e12356474"
+    }
   ],
   "parties": [
-    { "id": "p1", "soiree_id": "e1", "saison_id": "s1", "type": "pod", "format": "commander",
+    {
+      "soiree_id": "e12356474",
+      "type": "pod",
+      "format": "commander",
       "participants": [
-        { "joueur_id": "j1", "deck_id": "d1", "place": 1 },
-        { "joueur_id": "j2", "deck_id": "d2", "place": 2 },
-        { "joueur_id": "j3", "deck_id": "d3", "place": 3 },
-        { "joueur_id": "j4", "deck_id": "d4", "place": 4 }
-      ] },
-    { "id": "p2", "soiree_id": "e1", "saison_id": "s1", "type": "1v1", "categorie": "construit", "format": "pauper",
+        {
+          "joueur_id": "j1",
+          "deck_id": "d81211834",
+          "place": 3
+        },
+        {
+          "joueur_id": "j88142855",
+          "deck_id": "d55179740",
+          "place": 1
+        },
+        {
+          "joueur_id": "j35530694",
+          "deck_id": "d27093863",
+          "place": 2
+        }
+      ],
+      "id": "p57742403",
+      "saison_id": "s1"
+    },
+    {
+      "soiree_id": "e12356474",
+      "type": "pod",
+      "format": "commander",
       "participants": [
-        { "joueur_id": "j1", "deck_id": null, "resultat": "V" },
-        { "joueur_id": "j2", "deck_id": null, "resultat": "D" }
-      ] },
-    { "id": "p3", "soiree_id": "e1", "saison_id": "s1", "type": "1v1", "categorie": "limite", "format": "scellé",
+        {
+          "joueur_id": "j1",
+          "deck_id": "d50489455",
+          "place": 3
+        },
+        {
+          "joueur_id": "j88142855",
+          "deck_id": "d24922138",
+          "place": 2
+        },
+        {
+          "joueur_id": "j35530694",
+          "deck_id": "d27093863",
+          "place": 1
+        }
+      ],
+      "id": "p77149249",
+      "saison_id": "s1"
+    },
+    {
+      "soiree_id": "e12356474",
+      "type": "pod",
+      "format": "commander",
       "participants": [
-        { "joueur_id": "j3", "deck_id": null, "resultat": "V" },
-        { "joueur_id": "j4", "deck_id": null, "resultat": "D" }
-      ] },
-
-    { "id": "p4", "soiree_id": "e2", "saison_id": "s1", "type": "pod", "format": "commander",
+        {
+          "joueur_id": "j1",
+          "deck_id": "d37368529",
+          "place": 3
+        },
+        {
+          "joueur_id": "j88142855",
+          "deck_id": "d24922138",
+          "place": 1
+        },
+        {
+          "joueur_id": "j35530694",
+          "deck_id": "d27093863",
+          "place": 2
+        }
+      ],
+      "id": "p44104449",
+      "saison_id": "s1"
+    },
+    {
+      "soiree_id": "e12356474",
+      "type": "pod",
+      "format": "commander",
       "participants": [
-        { "joueur_id": "j2", "deck_id": "d2", "place": 1 },
-        { "joueur_id": "j3", "deck_id": "d3", "place": 2 },
-        { "joueur_id": "j5", "deck_id": "d5", "place": 3 }
-      ] },
-    { "id": "p5", "soiree_id": "e2", "saison_id": "s1", "type": "1v1", "categorie": "construit", "format": "pauper",
-      "participants": [
-        { "joueur_id": "j1", "deck_id": null, "resultat": "V" },
-        { "joueur_id": "j3", "deck_id": null, "resultat": "D" }
-      ] },
-    { "id": "p6", "soiree_id": "e2", "saison_id": "s1", "type": "1v1", "categorie": "construit", "format": "pauper",
-      "participants": [
-        { "joueur_id": "j4", "deck_id": null, "resultat": "V" },
-        { "joueur_id": "j2", "deck_id": null, "resultat": "D" }
-      ] },
-
-    { "id": "p7", "soiree_id": "e3", "saison_id": "s1", "type": "pod", "format": "commander",
-      "participants": [
-        { "joueur_id": "j1", "deck_id": "d1", "place": 2 },
-        { "joueur_id": "j4", "deck_id": "d4", "place": 1 },
-        { "joueur_id": "j5", "deck_id": "d5", "place": 3 },
-        { "joueur_id": "j2", "deck_id": "d2", "place": 4 }
-      ] },
-    { "id": "p8", "soiree_id": "e3", "saison_id": "s1", "type": "1v1", "categorie": "limite", "format": "draft",
-      "participants": [
-        { "joueur_id": "j1", "deck_id": null, "resultat": "V" },
-        { "joueur_id": "j5", "deck_id": null, "resultat": "D" }
-      ] },
-    { "id": "p9", "soiree_id": "e3", "saison_id": "s1", "type": "1v1", "categorie": "construit", "format": "pauper",
-      "participants": [
-        { "joueur_id": "j3", "deck_id": null, "resultat": "V" },
-        { "joueur_id": "j5", "deck_id": null, "resultat": "D" }
-      ] }
+        {
+          "joueur_id": "j1",
+          "deck_id": "d37368529",
+          "place": 3
+        },
+        {
+          "joueur_id": "j88142855",
+          "deck_id": "d81276051",
+          "place": 2
+        },
+        {
+          "joueur_id": "j35530694",
+          "deck_id": "d27093863",
+          "place": 1
+        }
+      ],
+      "id": "p27736486",
+      "saison_id": "s1"
+    }
   ]
 }
