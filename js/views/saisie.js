@@ -18,6 +18,7 @@ export function renderSaisie(container, ctx) {
       <h2>Nouvelle soirée</h2>
       <div class="fgrid">
         <div><label>Date</label><input type="date" id="so-date" value="${today()}"></div>
+        <div><label>Titre <span class="opt">(optionnel)</span></label><input type="text" id="so-titre" placeholder="ex. Soirée Spéciale Noël"></div>
         <div><label>Lieu</label><input type="text" id="so-lieu" placeholder="Chez… / boutique"></div>
         <div><label>Saison</label><select id="so-saison">${optSaisons(model)}</select></div>
       </div>
@@ -130,10 +131,11 @@ let presetPresents = [];
 function wireSoiree(container, ctx) {
   container.querySelector('#so-add').onclick = () => {
     const date = container.querySelector('#so-date').value;
+    const titre = container.querySelector('#so-titre').value.trim();
     const lieu = container.querySelector('#so-lieu').value.trim();
     const saison_id = container.querySelector('#so-saison').value || null;
     if (!date) return ctx.toast('Renseigne une date.');
-    store.addSoiree({ date, lieu, saison_id, notes: '' });
+    store.addSoiree({ date, titre, lieu, saison_id, notes: '' });
     ctx.toast('Soirée créée.');
     ctx.refresh();
   };
@@ -472,7 +474,7 @@ function wireEditPartie(container, ctx, model) {
 // Édition inline : `editing` retient l'entité en cours de modification ; il
 // survit aux ctx.refresh() (état module) le temps que l'utilisateur enregistre
 // ou annule.
-const editing = { joueur: null, deck: null, saison: null, partie: null };
+const editing = { joueur: null, deck: null, saison: null, partie: null, soiree: null };
 
 function gestionJoueurs(model) {
   return `<div class="form-card">
@@ -596,19 +598,35 @@ function ligneDeck(d, model) {
 }
 
 function gestionSoirees(model) {
-  const sn = Object.fromEntries(model.saisons.map((s) => [s.id, s.nom]));
   const list = store.soirees();
   return `<div class="form-card">
     <h2>Soirées</h2>
     <p class="mini">Créées via « Nouvelle soirée » plus haut. Supprimer une soirée retire aussi <b>toutes ses parties</b>.</p>
-    <ul class="mini-list">${list.map((e) => {
-      const n = store.partiesDe(e.id).length;
-      return `<li data-id="${e.id}">
-        <span class="ml-lib">${dateFr(e.date)}${e.lieu ? ' · ' + esc(e.lieu) : ''} <small>${esc(sn[e.saison_id] || 'sans saison')} · ${n} partie${n > 1 ? 's' : ''}</small></span>
-        <span class="ml-actions"><button class="btn btn-mini" data-act="so-del">Supprimer</button></span>
-      </li>`;
-    }).join('') || '<li class="empty">aucune</li>'}</ul>
+    <ul class="mini-list">${list.map((e) => ligneSoiree(e, model)).join('') || '<li class="empty">aucune</li>'}</ul>
   </div>`;
+}
+function ligneSoiree(e, model) {
+  const sn = Object.fromEntries(model.saisons.map((s) => [s.id, s.nom]));
+  const n = store.partiesDe(e.id).length;
+  if (editing.soiree === e.id) {
+    return `<li class="editing" data-id="${e.id}">
+      <div class="fgrid">
+        <div><label>Date</label><input type="date" class="e-date" value="${esc(e.date || '')}"></div>
+        <div><label>Titre</label><input type="text" class="e-titre" value="${esc(e.titre || '')}" placeholder="ex. Soirée Spéciale Noël"></div>
+        <div><label>Lieu</label><input type="text" class="e-lieu" value="${esc(e.lieu || '')}"></div>
+        <div><label>Saison</label><select class="e-saison"><option value="">— sans saison —</option>${model.saisons.map((s) => `<option value="${s.id}" ${s.id === e.saison_id ? 'selected' : ''}>${esc(s.nom)}</option>`).join('')}</select></div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn btn-mini" data-act="so-save">Enregistrer</button>
+        <button class="btn btn-mini" data-act="so-cancel">Annuler</button>
+      </div></li>`;
+  }
+  return `<li data-id="${e.id}">
+    <span class="ml-lib">${e.titre ? '<b>' + esc(e.titre) + '</b> · ' : ''}${dateFr(e.date)}${e.lieu ? ' · ' + esc(e.lieu) : ''} <small>${esc(sn[e.saison_id] || 'sans saison')} · ${n} partie${n > 1 ? 's' : ''}</small></span>
+    <span class="ml-actions">
+      <button class="btn btn-mini" data-act="so-edit">Modifier</button>
+      <button class="btn btn-mini" data-act="so-del">Supprimer</button>
+    </span></li>`;
 }
 
 function wireGestion(container, ctx, model) {
@@ -712,6 +730,19 @@ function actionGestion(btn, container, ctx, model) {
       store.rouvrirSaison(id); ctx.toast('Saison rouverte.'); ctx.refresh(); break;
     }
     // --- soirées ---
+    case 'so-edit': editing.soiree = id; ctx.refresh(); break;
+    case 'so-cancel': editing.soiree = null; ctx.refresh(); break;
+    case 'so-save': {
+      const date = val('.e-date');
+      if (!date) return ctx.toast('Renseigne une date.');
+      store.updateSoiree({
+        id, date,
+        titre: val('.e-titre').trim(),
+        lieu: val('.e-lieu').trim(),
+        saison_id: val('.e-saison') || null,
+      });
+      editing.soiree = null; ctx.toast('Soirée modifiée.'); ctx.refresh(); break;
+    }
     case 'so-del': {
       const n = store.partiesDe(id).length;
       if (!confirm(n ? `Supprimer cette soirée et ses ${n} partie${n > 1 ? 's' : ''} ?` : 'Supprimer cette soirée ?')) return;
@@ -737,5 +768,5 @@ function optSaisons(model) {
   return model.saisons.map((s) => `<option value="${s.id}" ${s.active ? 'selected' : ''}>${esc(s.nom)}</option>`).join('');
 }
 function optSoirees(model) {
-  return store.soirees().map((e) => `<option value="${e.id}">${dateFr(e.date)}${e.lieu ? ' · ' + esc(e.lieu) : ''}</option>`).join('');
+  return store.soirees().map((e) => `<option value="${e.id}">${dateFr(e.date)}${e.titre ? ' · ' + esc(e.titre) : ''}${e.lieu ? ' · ' + esc(e.lieu) : ''}</option>`).join('');
 }

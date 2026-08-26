@@ -76,7 +76,7 @@ function wireFiltres(container, ctx) {
 function bloc(e, parties, jn, dn, sn) {
   return `<div class="bloc">
     <div class="bloc-head">
-      <span>${dateFr(e.date)}${e.lieu ? ' · ' + esc(e.lieu) : ''}</span>
+      <span>${e.titre ? esc(e.titre) + ' · ' : ''}${dateFr(e.date)}${e.lieu ? ' · ' + esc(e.lieu) : ''}</span>
       <span class="bloc-tag">${esc(sn[e.saison_id] || '')} · ${parties.length} partie${parties.length > 1 ? 's' : ''}</span>
     </div>
     <div class="parties">
