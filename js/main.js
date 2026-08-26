@@ -48,6 +48,7 @@ function startUI() {
     };
   });
   renderView();
+  window.__appReady = true;   // signale au filet de secours (index.html) que l'app tourne
 }
 
 function renderView() {

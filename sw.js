@@ -1,12 +1,14 @@
-// sw.js — service worker : coquille en cache pour le hors-ligne.
+// sw.js — service worker : cache de secours HORS-LIGNE uniquement.
 //
-// IMPORTANT : data/ligue.json est traité en RÉSEAU D'ABORD (pas de cache-first),
-// sinon on servirait un classement périmé après une publication. Les appels à
+// Stratégie RÉSEAU D'ABORD pour tout (coquille + data) : on sert toujours la
+// dernière version en ligne, et le cache ne sert que de repli si le réseau est
+// indisponible. Cela évite qu'un ancien cache serve une version cassée après
+// une mise à jour (le fameux « page blanche au Ctrl+Maj+R »). Les appels à
 // api.github.com (cross-origin) ne sont jamais interceptés.
 //
-// Pour publier une MAJ du code : incrémenter CACHE.
+// Bump CACHE quand tu veux forcer la purge de l'ancien cache.
 
-const CACHE = 'jurande-v9';
+const CACHE = 'jurande-v10';
 const ASSETS = [
   '.', 'index.html', 'manifest.webmanifest',
   'css/styles.css',
@@ -18,7 +20,10 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // Précache tolérant : un asset manquant ne fait plus échouer l'installation.
+  e.waitUntil(caches.open(CACHE)
+    .then((c) => Promise.allSettled(ASSETS.map((a) => c.add(a))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
@@ -28,25 +33,17 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;   // laisse passer GitHub API, fontes…
 
-  // Données : réseau d'abord, cache en repli hors-ligne.
-  if (url.pathname.endsWith('ligue.json')) {
-    e.respondWith(
-      fetch(e.request).then((res) => {
+  // Réseau d'abord ; on met à jour le cache au passage ; repli cache si hors-ligne.
+  e.respondWith(
+    fetch(e.request).then((res) => {
+      if (res && res.ok) {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
-        return res;
-      }).catch(() => caches.match(e.request)));
-    return;
-  }
-
-  // Coquille : cache d'abord.
-  e.respondWith(
-    caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => {
-      const copy = res.clone();
-      caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+      }
       return res;
-    }).catch(() => hit)));
+    }).catch(() => caches.match(e.request).then((hit) => hit || caches.match('index.html'))));
 });
