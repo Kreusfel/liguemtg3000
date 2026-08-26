@@ -138,6 +138,9 @@ function renderFiche(container, ctx, model) {
     <h2>Couleurs jouées <small class="mini">(en Commander, pondéré par parties)</small></h2>
     ${couleursBloc(decks, plays)}
 
+    <h2>Hauts faits</h2>
+    ${hautsFaitsBloc(model, j.id, plays)}
+
     <h2>Face-à-face 1v1</h2>
     ${h2hBloc(model, j.id, h2h)}
 
@@ -169,6 +172,55 @@ function couleursBloc(decks, plays) {
     `<span class="mana-pip mana-${c.toLowerCase()}" title="${noms[c]}">${c}<b>${cp[c]}</b></span>`).join('');
   if (!total) return '<div class="empty">Aucune partie Commander enregistrée.</div>';
   return `<div class="pips-ligne">${pips}</div>`;
+}
+
+// Hauts faits (succès) d'un joueur, calculés depuis le log.
+function hautsFaits(model, jid, plays) {
+  const sdate = Object.fromEntries(model.soirees.map((s) => [s.id, s.date || '']));
+  const mine = model.parties.filter((p) => p.participants.some((x) => x.joueur_id === jid));
+  const duels = mine.filter((p) => p.type === '1v1')
+    .sort((a, b) => (sdate[a.soiree_id] || '').localeCompare(sdate[b.soiree_id] || ''));
+  const formats = new Set();
+  let v1 = 0, d1 = 0, streak = 0, best = 0;
+  for (const p of duels) {
+    const me = p.participants.find((x) => x.joueur_id === jid);
+    formats.add(p.categorie === 'limite' ? 'limite' : 'construit');
+    if (me.resultat === 'V') { v1++; streak++; best = Math.max(best, streak); }
+    else { if (me.resultat === 'D') d1++; streak = 0; }
+  }
+  let podsWon = 0;
+  for (const p of mine.filter((p) => p.type === 'pod')) {
+    formats.add('commander');
+    if (p.participants.find((x) => x.joueur_id === jid).place === 1) podsWon++;
+  }
+  const cols = new Set();
+  for (const dk of model.decks.filter((d) => d.joueur_id === jid)) {
+    if ((plays[dk.id] || 0) > 0) for (const c of (dk.couleurs || [])) cols.add(c);
+  }
+  const total = mine.length;
+  const wr1 = (v1 + d1) ? v1 / (v1 + d1) : 0;
+  const jnom = (model.joueurs.find((j) => j.id === jid) || {}).nom;
+  const titres = model.saisons.filter((s) => s.cloturee && s.palmares && s.palmares.champion === jnom).length;
+
+  return [
+    { emo: '🩸', t: 'Premier sang', d: 'Gagner un pod Commander', got: podsWon >= 1 },
+    { emo: '🔥', t: best >= 3 ? `Série de ${best}` : 'Série de victoires', d: '3 victoires 1v1 d\'affilée', got: best >= 3 },
+    { emo: '🌈', t: 'Toutes les couleurs', d: 'Jouer les 5 couleurs', got: cols.size >= 5 },
+    { emo: '🎯', t: 'Sans faute', d: '100 % en 1v1 (≥ 3 matchs)', got: (v1 + d1) >= 3 && wr1 === 1 },
+    { emo: '🎲', t: 'Triple menace', d: 'Jouer Commander, Construit et Limité', got: formats.has('commander') && formats.has('construit') && formats.has('limite') },
+    { emo: '🗡️', t: 'Vétéran', d: '10 parties jouées', got: total >= 10 },
+    { emo: '👑', t: 'Champion de saison', d: 'Finir 1er Commander d\'une saison clôturée', got: titres >= 1 },
+  ];
+}
+
+function hautsFaitsBloc(model, jid, plays) {
+  const list = hautsFaits(model, jid, plays);
+  return `<div class="badges">${list.map((b) => `
+    <div class="badge-hf ${b.got ? 'got' : 'locked'}">
+      <span class="bhf-emo">${b.got ? b.emo : '🔒'}</span>
+      <span class="bhf-t">${esc(b.t)}</span>
+      <span class="bhf-d">${esc(b.d)}</span>
+    </div>`).join('')}</div>`;
 }
 
 function h2hBloc(model, jid, h2h) {

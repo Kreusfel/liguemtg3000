@@ -158,6 +158,14 @@ tr.podium-3{background:#fdf3e9 !important}
 .mana-dot.mana-r{background:var(--r)}.mana-dot.mana-g{background:var(--g)}
 .h2h-pos{color:var(--g);font-weight:800}
 .h2h-neg{color:var(--r);font-weight:800}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin:6px 0 8px}
+.badge-hf{background:var(--panel);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px;
+  display:flex;flex-direction:column;gap:2px;border:2px solid transparent}
+.badge-hf.got{border-color:var(--accent2);background:linear-gradient(160deg,#fff,#fff6ee)}
+.badge-hf.locked{opacity:.5}
+.bhf-emo{font-size:22px;line-height:1.1}
+.bhf-t{font-family:'Fredoka',sans-serif;font-weight:600;color:var(--ink)}
+.bhf-d{font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace}
 table.matrix th,table.matrix td{text-align:center}
 table.matrix td.desig,table.matrix thead th:first-child{text-align:left}
 table.matrix .h2h-diag{background:repeating-linear-gradient(45deg,#f0ebfc,#f0ebfc 4px,#faf8ff 4px,#faf8ff 8px)}
