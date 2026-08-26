@@ -6,13 +6,13 @@
 //
 // Pour publier une MAJ du code : incrémenter CACHE.
 
-const CACHE = 'jurande-v5';
+const CACHE = 'jurande-v6';
 const ASSETS = [
   '.', 'index.html', 'manifest.webmanifest',
   'css/styles.css',
   'js/main.js', 'js/store.js', 'js/github.js', 'js/ranking.js', 'js/util.js',
   'js/views/classement.js', 'js/views/historique.js', 'js/views/joueurs.js',
-  'js/views/saisie.js', 'js/views/reglages.js',
+  'js/views/rivalites.js', 'js/views/saisie.js', 'js/views/reglages.js',
   'icons/icon.svg',
 ];
 

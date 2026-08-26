@@ -182,6 +182,23 @@ table.matrix .h2h-vide{color:var(--line2)}
 .deck-pill small{display:block;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:400}
 .deck-autres{color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:2px 2px 0}
 
+/* ---------- rivalités ---------- */
+.riv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:8px}
+.rivalry{background:var(--panel);border-radius:var(--rc);box-shadow:var(--shadow);padding:15px 16px}
+.riv-noms{display:flex;align-items:center;gap:10px;font-family:'Fredoka',sans-serif;font-size:17px;margin-bottom:10px}
+.riv-noms .vs{color:var(--muted);font-size:12px;font-family:'IBM Plex Mono',monospace}
+.riv-noms .riv-lead{color:var(--accent-d)}
+.riv-bar{display:flex;height:10px;border-radius:var(--rp);overflow:hidden;background:var(--line);margin-bottom:9px}
+.riv-bar .riv-a{background:var(--accent)}
+.riv-bar .riv-b{background:var(--accent2)}
+.riv-bar .riv-n{background:var(--line2)}
+.riv-detail{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.riv-detail .mono{font-family:'IBM Plex Mono',monospace;color:var(--ink);font-weight:700}
+.riv-tag{font-family:'Fredoka',sans-serif;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:var(--rp);color:#fff}
+.riv-tag.riv-serre{background:var(--r)}
+.riv-tag.riv-eq{background:var(--b)}
+.riv-tag.riv-domin{background:var(--accent)}
+
 /* ---------- formulaires / saisie ---------- */
 /* Sous-onglets de saisie : un seul type de partie affiché à la fois. */
 .saisie-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
