@@ -106,6 +106,27 @@ export function removeSaison(id) {
   toucher();
 }
 
+// Clôture une saison : la désactive, fixe la date de fin et fige un palmarès
+// (snapshot des vainqueurs au moment de la clôture).
+export function cloturerSaison(id, palmares) {
+  const s = model.saisons.find((x) => x.id === id);
+  if (!s) return;
+  s.active = false;
+  s.fin = today();
+  s.cloturee = true;
+  s.palmares = palmares || null;
+  toucher();
+}
+
+export function rouvrirSaison(id) {
+  const s = model.saisons.find((x) => x.id === id);
+  if (!s) return;
+  s.cloturee = false;
+  s.fin = null;
+  delete s.palmares;
+  toucher();
+}
+
 // Comptage des références (pour bloquer une suppression destructrice).
 export const refsJoueur = (id) =>
   model.decks.filter((d) => d.joueur_id === id).length

@@ -6,6 +6,7 @@
 import * as store from '../store.js';
 import { publier } from '../github.js';
 import { peutPublier } from '../github.js';
+import { classementCommander, classementElo } from '../ranking.js';
 import { esc, dateFr, today } from '../util.js';
 
 export function renderSaisie(container, ctx) {
@@ -519,13 +520,42 @@ function ligneSaison(s) {
         <button class="btn btn-mini" data-act="sa-cancel">Annuler</button>
       </div></li>`;
   }
+  const etat = s.cloturee
+    ? `<b>(clôturée${s.fin ? ' le ' + dateFr(s.fin) : ''})</b>${palmaresLigne(s.palmares)}`
+    : (s.active ? ' <b>(active)</b>' : '');
+  const actions = s.cloturee
+    ? `<button class="btn btn-mini" data-act="sa-rouvrir">Rouvrir</button>
+       <button class="btn btn-mini" data-act="sa-del">Supprimer</button>`
+    : `<button class="btn btn-mini" data-act="sa-toggle">${s.active ? 'Désactiver' : 'Activer'}</button>
+       <button class="btn btn-mini" data-act="sa-cloturer">Clôturer</button>
+       <button class="btn btn-mini" data-act="sa-edit">Modifier</button>
+       <button class="btn btn-mini" data-act="sa-del">Supprimer</button>`;
   return `<li data-id="${s.id}">
-    <span class="ml-lib">${esc(s.nom)}${s.active ? ' <b>(active)</b>' : ''}</span>
-    <span class="ml-actions">
-      <button class="btn btn-mini" data-act="sa-toggle">${s.active ? 'Désactiver' : 'Activer'}</button>
-      <button class="btn btn-mini" data-act="sa-edit">Modifier</button>
-      <button class="btn btn-mini" data-act="sa-del">Supprimer</button>
-    </span></li>`;
+    <span class="ml-lib">${esc(s.nom)} ${etat}</span>
+    <span class="ml-actions">${actions}</span></li>`;
+}
+
+// Ligne récap du palmarès figé à la clôture.
+function palmaresLigne(p) {
+  if (!p) return '';
+  const bits = [];
+  if (p.champion) bits.push(`🏆 ${esc(p.champion)}`);
+  if (p.construit) bits.push(`⚔️ ${esc(p.construit)}`);
+  if (p.limite) bits.push(`🎲 ${esc(p.limite)}`);
+  return bits.length ? `<small>${bits.join(' · ')}</small>` : '';
+}
+
+// Calcule le snapshot des vainqueurs d'une saison au moment de la clôture.
+function calcPalmares(model, saisonId) {
+  const champ = classementCommander(model, saisonId).joueurs[0];
+  const ec = classementElo(model, 'construit', saisonId)[0];
+  const el = classementElo(model, 'limite', saisonId)[0];
+  return {
+    date: today(),
+    champion: champ && champ.entite ? champ.entite.nom : null,
+    construit: ec && ec.joueur ? ec.joueur.nom : null,
+    limite: el && el.joueur ? el.joueur.nom : null,
+  };
 }
 
 function gestionDecks(model) {
@@ -655,6 +685,14 @@ function actionGestion(btn, container, ctx, model) {
       if (n) return ctx.toast(`Impossible : saison utilisée dans ${n} soirée(s)/partie(s).`);
       if (!confirm('Supprimer cette saison ?')) return;
       store.removeSaison(id); ctx.toast('Saison supprimée.'); ctx.refresh(); break;
+    }
+    case 'sa-cloturer': {
+      if (!confirm('Clôturer cette saison ? Elle sera désactivée et son palmarès figé.')) return;
+      store.cloturerSaison(id, calcPalmares(model, id));
+      ctx.toast('Saison clôturée.'); ctx.refresh(); break;
+    }
+    case 'sa-rouvrir': {
+      store.rouvrirSaison(id); ctx.toast('Saison rouverte.'); ctx.refresh(); break;
     }
   }
 }
