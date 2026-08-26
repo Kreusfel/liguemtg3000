@@ -56,11 +56,43 @@ function renderGrille(container, ctx, model) {
     <h1>Joueurs — ${model.joueurs.length}</h1>
     <p class="sub">Clique sur un joueur pour sa fiche détaillée (courbe d'ELO, couleurs, head-to-head).</p>
     <div class="joueur-grid">${cartes || '<div class="empty">Aucun joueur.</div>'}</div>
+
+    <h2>Face-à-face 1v1 — tableau croisé</h2>
+    <p class="sub">Bilan de chaque ligne <b>contre</b> chaque colonne (victoires–défaites, toutes catégories 1v1).</p>
+    ${h2hMatrix(model)}
   `;
 
   container.querySelectorAll('.jc-clic').forEach((el) => {
     el.onclick = () => { selJoueur = el.dataset.joueur; ctx.refresh(); };
   });
+}
+
+// Tableau croisé des face-à-face 1v1 (ligne vs colonne).
+function h2hMatrix(model) {
+  const h = faceAFace(model);
+  const joueurs = model.joueurs.filter((j) => h[j.id] && Object.values(h[j.id]).some((r) => r.total));
+  if (joueurs.length < 2) return '<div class="empty">Pas encore de match 1v1.</div>';
+  const th = joueurs.map((c) => `<th class="num" title="${esc(c.nom)}">${esc(abbr(c.nom))}</th>`).join('');
+  const rows = joueurs.map((a) => {
+    const cells = joueurs.map((b) => {
+      if (a.id === b.id) return '<td class="h2h-diag"></td>';
+      const r = h[a.id] && h[a.id][b.id];
+      if (!r || !r.total) return '<td class="num h2h-vide">·</td>';
+      const bilan = r.v - r.d;
+      const cls = bilan > 0 ? 'h2h-pos' : bilan < 0 ? 'h2h-neg' : '';
+      return `<td class="num ${cls}" title="${esc(a.nom)} vs ${esc(b.nom)}">${r.v}–${r.d}${r.n ? '–' + r.n : ''}</td>`;
+    }).join('');
+    return `<tr><td class="desig">${esc(a.nom)}</td>${cells}</tr>`;
+  }).join('');
+  return `<div class="tablewrap"><table class="matrix">
+    <thead><tr><th></th>${th}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+
+// Abrège un nom pour les en-têtes de colonnes (3 premières lettres).
+function abbr(nom) {
+  return String(nom || '').slice(0, 3);
 }
 
 // ----------------------------------------------------------------- fiche -----
