@@ -188,6 +188,9 @@ table.matrix .h2h-vide{color:var(--line2)}
 .deck-autres{color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:2px 2px 0}
 /* page Decks */
 .jc-pret{font-size:14px}
+.deck-head.has-art{min-height:112px;background-size:cover;background-position:center;
+  display:flex;align-items:flex-end;text-shadow:0 1px 4px rgba(0,0,0,.75)}
+.cmd-fr{color:var(--accent2);font-weight:700;font-family:'Nunito',sans-serif}
 .deck-commandant{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:8px}
 .deck-jouepar{display:flex;flex-direction:column;gap:6px}
 .jp-lib{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}

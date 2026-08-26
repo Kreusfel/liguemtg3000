@@ -6,6 +6,7 @@ import { getModel, upsertDeck, removeDeck, refsDeck } from '../store.js';
 import { classementCommander } from '../ranking.js';
 import { esc, pct } from '../util.js';
 import { optJoueurs, optJoueursSel, parseCouleurs, deckPlays, manaGradient } from './shared.js';
+import { getCached, resoudreManquants } from '../scryfall.js';
 
 let editDeck = null;   // id du deck en cours d'édition (null = aucun)
 
@@ -19,12 +20,43 @@ export function renderDecks(container, ctx) {
 
   container.innerHTML = `
     <h1>Decks — ${model.decks.length}</h1>
-    <p class="sub">Chaque deck cumule ses stats même prêté à d'autres joueurs. Les couleurs forment le contour.</p>
+    <p class="sub">Chaque deck cumule ses stats même prêté à d'autres joueurs. Illustrations et noms FR via Scryfall.</p>
     ${formAjout(model)}
     <div class="joueur-grid">${cartes || '<div class="empty">Aucun deck.</div>'}</div>
   `;
 
   wire(container, ctx, model);
+  enrichScryfall(container);
+}
+
+// Récupère illustration + nom FR pour les commandants pas encore en cache,
+// puis applique au DOM (sans re-render). Les cartes déjà en cache sont peintes
+// directement par carteDeck().
+function enrichScryfall(container) {
+  const cards = [...container.querySelectorAll('.deck-card[data-cmd]')];
+  const noms = cards.map((c) => c.dataset.cmd).filter(Boolean);
+  resoudreManquants(noms, (k, e) => {
+    cards.filter((c) => String(c.dataset.cmd).trim().toLowerCase() === k).forEach((c) => appliquerScryfall(c, e));
+  });
+}
+
+function appliquerScryfall(card, e) {
+  if (!e || e.notFound) return;
+  if (e.img) {
+    const h = card.querySelector('.deck-head');
+    if (h) { h.classList.add('has-art'); h.style.backgroundImage = artFond(e.img); }
+  }
+  if (e.fr) {
+    const c = card.querySelector('.deck-commandant');
+    const stored = String(card.dataset.cmd || '');
+    if (c && !c.querySelector('.cmd-fr') && e.fr.toLowerCase() !== stored.toLowerCase()) {
+      c.insertAdjacentHTML('beforeend', ` <span class="cmd-fr">🇫🇷 ${esc(e.fr)}</span>`);
+    }
+  }
+}
+
+function artFond(img) {
+  return `linear-gradient(to top, rgba(20,10,30,.78), rgba(20,10,30,.15)), url('${img}')`;
 }
 
 function formAjout(model) {
@@ -69,8 +101,16 @@ function carteDeck(d, model, s, plays, jn) {
         <small>${u.parties} partie${u.parties > 1 ? 's' : ''} · ${u.victoires} V</small></div>`).join('')
     : '<span class="empty">jamais joué</span>';
 
-  return `<div class="joueur-card"${style}>
-    <div class="jc-head"><b>${esc(d.nom)}</b>${emprunteurs.length ? ' <span class="jc-pret" title="deck prêté">🤝</span>' : ''}</div>
+  // Illustration + nom FR depuis le cache Scryfall (le reste est chargé ensuite).
+  const sc = getCached(d.commandant);
+  const art = sc && sc.img ? sc.img : null;
+  const fr = sc && sc.fr ? sc.fr : null;
+  const headStyle = art ? ` style="background-image:${artFond(art)}"` : '';
+  const frTag = fr && fr.toLowerCase() !== String(d.commandant || '').toLowerCase()
+    ? ` <span class="cmd-fr">🇫🇷 ${esc(fr)}</span>` : '';
+
+  return `<div class="joueur-card deck-card" data-cmd="${esc(d.commandant || '')}"${style}>
+    <div class="jc-head deck-head${art ? ' has-art' : ''}"${headStyle}><b>${esc(d.nom)}</b>${emprunteurs.length ? ' <span class="jc-pret" title="deck prêté">🤝</span>' : ''}</div>
     <div class="jc-stats">
       <div class="jc-stat"><span>Propriétaire</span><b style="font-size:15px">${esc(jn[d.joueur_id] || '?')}</b></div>
       <div class="jc-stat"><span>Parties</span><b>${plays[d.id] || 0}</b></div>
@@ -78,7 +118,7 @@ function carteDeck(d, model, s, plays, jn) {
       <div class="jc-stat"><span>Winrate</span><b>${s ? pct(s.winrate) : '—'}</b></div>
     </div>
     <div class="jc-decks">
-      ${d.commandant ? `<div class="deck-commandant">${esc(d.commandant)}</div>` : ''}
+      ${d.commandant ? `<div class="deck-commandant">${esc(d.commandant)}${frTag}</div>` : ''}
       <div class="deck-jouepar"><span class="jp-lib">Joué par</span>${joueParHtml}</div>
     </div>
     <div class="deck-actions">
