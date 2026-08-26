@@ -117,6 +117,11 @@ tr.podium-3{background:#fdf3e9 !important}
 /* ---------- historique ---------- */
 .filtres{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
 .filtres select,.filtres input{width:auto;min-width:150px}
+.bloc-head-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.p-actions{margin-left:auto;display:flex;gap:6px;flex-shrink:0}
+.partie-edit{padding:14px 16px;border-bottom:1px solid var(--line);background:#faf8ff}
+.partie-edit:last-child{border-bottom:none}
+.partie-edit h3{margin:0 0 12px;font-family:'Fredoka',sans-serif;color:var(--accent-d);font-size:16px}
 .parties{padding:2px 0}
 .partie{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .partie:last-child{border-bottom:none}
