@@ -1,11 +1,13 @@
 // joueurs.js — annuaire des joueurs (cartes) et fiche détaillée au clic :
 // courbe d'ELO, couleurs jouées, deck le plus victorieux, head-to-head.
 
-import { getModel, decksDe } from '../store.js';
+import { getModel, decksDe, upsertJoueur, removeJoueur, refsJoueur } from '../store.js';
 import { classementElo, classementCommander, eloTimeline, faceAFace } from '../ranking.js';
 import { esc, pct, r0, sparkline } from '../util.js';
+import { deckPlays, couleursDominantes, manaGradient } from './_shared.js';
 
 let selJoueur = null;   // fiche ouverte (null = grille)
+let editJoueur = false; // mode édition sur la fiche ouverte
 
 export function renderJoueurs(container, ctx) {
   const model = getModel();
@@ -55,6 +57,9 @@ function renderGrille(container, ctx, model) {
   container.innerHTML = `
     <h1>Joueurs — ${model.joueurs.length}</h1>
     <p class="sub">Clique sur un joueur pour sa fiche détaillée (courbe d'ELO, couleurs, head-to-head).</p>
+    <div class="ajout-inline" style="margin-bottom:18px">
+      <input type="text" id="jo-nom" placeholder="Nom du joueur"><button class="btn" id="jo-add">Ajouter un joueur</button>
+    </div>
     <div class="joueur-grid">${cartes || '<div class="empty">Aucun joueur.</div>'}</div>
 
     <h2>Face-à-face 1v1 — tableau croisé</h2>
@@ -62,8 +67,15 @@ function renderGrille(container, ctx, model) {
     ${h2hMatrix(model)}
   `;
 
+  const add = () => {
+    const nom = container.querySelector('#jo-nom').value.trim();
+    if (!nom) return;
+    upsertJoueur({ nom }); ctx.toast('Joueur ajouté.'); ctx.refresh();
+  };
+  container.querySelector('#jo-add').onclick = add;
+  container.querySelector('#jo-nom').onkeydown = (e) => { if (e.key === 'Enter') add(); };
   container.querySelectorAll('.jc-clic').forEach((el) => {
-    el.onclick = () => { selJoueur = el.dataset.joueur; ctx.refresh(); };
+    el.onclick = () => { selJoueur = el.dataset.joueur; editJoueur = false; ctx.refresh(); };
   });
 }
 
@@ -104,21 +116,37 @@ function renderFiche(container, ctx, model) {
   const tlC = eloTimeline(model, 'construit')[j.id];
   const tlL = eloTimeline(model, 'limite')[j.id];
   const h2h = faceAFace(model)[j.id] || {};
-  const decks = decksDe(j.id);
-  const plays = deckPlays(model);
+  const deckById = Object.fromEntries(model.decks.map((d) => [d.id, d]));
+  const usage = decksJoues(model, j.id);   // decks joués par CE joueur (emprunts inclus)
 
-  // deck le plus victorieux (Commander), sinon le plus joué
-  const cmdDecks = classementCommander(model).decks
-    .filter((d) => d.entite && d.entite.joueur_id === j.id)
-    .sort((a, b) => b.victoires - a.victoires || b.winrate - a.winrate);
-  const topVict = cmdDecks.find((d) => d.victoires > 0) || null;
+  // deck le plus victorieux DE CE JOUEUR (ses propres parties)
+  let topVict = null;
+  for (const id of Object.keys(usage)) {
+    if (usage[id].victoires > 0 && (!topVict || usage[id].victoires > usage[topVict].victoires)) topVict = id;
+  }
+
+  const enTete = editJoueur
+    ? `<div class="titre-ligne">
+        <button class="btn btn-mini" id="fiche-retour">← Joueurs</button>
+        <input type="text" id="j-nom" value="${esc(j.nom)}" style="width:auto;font-size:16px">
+        <label class="chk" style="display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;color:var(--ink);margin:0;width:auto;font-weight:700"><input type="checkbox" id="j-actif" ${j.actif !== false ? 'checked' : ''} style="width:auto"> actif</label>
+        <div class="tl-controls">
+          <button class="btn btn-mini btn-noir" id="j-save">Enregistrer</button>
+          <button class="btn btn-mini" id="j-cancel">Annuler</button>
+        </div>
+      </div>`
+    : `<div class="titre-ligne">
+        <button class="btn btn-mini" id="fiche-retour">← Joueurs</button>
+        <h1 style="margin:0">${esc(j.nom)}</h1>
+        ${j.actif !== false ? '' : '<span class="inactif" style="color:var(--muted)">inactif</span>'}
+        <div class="tl-controls">
+          <button class="btn btn-mini" id="j-edit">Modifier</button>
+          <button class="btn btn-mini" id="j-del">Supprimer</button>
+        </div>
+      </div>`;
 
   container.innerHTML = `
-    <div class="titre-ligne">
-      <button class="btn btn-mini" id="fiche-retour">← Joueurs</button>
-      <h1 style="margin:0">${esc(j.nom)}</h1>
-      ${j.actif !== false ? '' : '<span class="inactif" style="color:var(--muted)">inactif</span>'}
-    </div>
+    ${enTete}
 
     <div class="fiche-stats">
       ${carteElo('⚔️ ELO Construit', eloC, tlC, 'var(--u)')}
@@ -130,25 +158,42 @@ function renderFiche(container, ctx, model) {
       </div>
       <div class="rcard">
         <span class="rc-lib">🏆 Deck le plus victorieux</span>
-        <b class="rc-val" style="font-size:16px">${topVict ? esc(topVict.entite.nom) : '<span class="rc-vide">—</span>'}</b>
-        <span class="rc-sub">${topVict ? `${topVict.victoires} victoire${topVict.victoires > 1 ? 's' : ''} · ${pct(topVict.winrate)}` : ''}</span>
+        <b class="rc-val" style="font-size:16px">${topVict ? esc(deckById[topVict].nom) : '<span class="rc-vide">—</span>'}</b>
+        <span class="rc-sub">${topVict ? `${usage[topVict].victoires} victoire${usage[topVict].victoires > 1 ? 's' : ''} · ${pct(usage[topVict].victoires / usage[topVict].parties)}` : ''}</span>
       </div>
     </div>
 
     <h2>Couleurs jouées <small class="mini">(en Commander, pondéré par parties)</small></h2>
-    ${couleursBloc(decks, plays)}
+    ${couleursBloc(usage, deckById)}
 
     <h2>Hauts faits</h2>
-    ${hautsFaitsBloc(model, j.id, plays)}
+    ${hautsFaitsBloc(model, j.id, usage, deckById)}
 
     <h2>Face-à-face 1v1</h2>
     ${h2hBloc(model, j.id, h2h)}
 
-    <h2>Decks Commander</h2>
-    ${decksBloc(cmdDecks, decks, plays)}
+    <h2>Decks joués</h2>
+    ${decksBloc(model, j.id, usage, deckById)}
   `;
 
-  container.querySelector('#fiche-retour').onclick = () => { selJoueur = null; ctx.refresh(); };
+  container.querySelector('#fiche-retour').onclick = () => { selJoueur = null; editJoueur = false; ctx.refresh(); };
+  if (editJoueur) {
+    container.querySelector('#j-cancel').onclick = () => { editJoueur = false; ctx.refresh(); };
+    container.querySelector('#j-save').onclick = () => {
+      const nom = container.querySelector('#j-nom').value.trim();
+      if (!nom) return ctx.toast('Nom requis.');
+      upsertJoueur({ id: j.id, nom, actif: container.querySelector('#j-actif').checked });
+      editJoueur = false; ctx.toast('Joueur modifié.'); ctx.refresh();
+    };
+  } else {
+    container.querySelector('#j-edit').onclick = () => { editJoueur = true; ctx.refresh(); };
+    container.querySelector('#j-del').onclick = () => {
+      const n = refsJoueur(j.id);
+      if (n) return ctx.toast(`Impossible : joueur utilisé dans ${n} deck(s)/partie(s).`);
+      if (!confirm('Supprimer ce joueur ?')) return;
+      removeJoueur(j.id); selJoueur = null; ctx.toast('Joueur supprimé.'); ctx.refresh();
+    };
+  }
 }
 
 function carteElo(titre, stat, serie, stroke) {
@@ -160,11 +205,26 @@ function carteElo(titre, stat, serie, stroke) {
   </div>`;
 }
 
-function couleursBloc(decks, plays) {
+// Decks réellement joués par un joueur (emprunts inclus) : { deckId: {parties, victoires} }.
+function decksJoues(model, jid) {
+  const u = {};
+  for (const p of model.parties) {
+    for (const x of (p.participants || [])) {
+      if (x.joueur_id !== jid || !x.deck_id) continue;
+      const e = u[x.deck_id] || (u[x.deck_id] = { parties: 0, victoires: 0 });
+      e.parties++;
+      if (p.type === 'pod' ? x.place === 1 : x.resultat === 'V') e.victoires++;
+    }
+  }
+  return u;
+}
+
+function couleursBloc(usage, deckById) {
   const cp = {};
-  for (const d of decks) {
-    const n = plays[d.id] || 0;
-    for (const c of (d.couleurs || [])) cp[c] = (cp[c] || 0) + n;
+  for (const [id, u] of Object.entries(usage)) {
+    const d = deckById[id];
+    if (!d) continue;
+    for (const c of (d.couleurs || [])) cp[c] = (cp[c] || 0) + u.parties;
   }
   const noms = { W: 'Blanc', U: 'Bleu', B: 'Noir', R: 'Rouge', G: 'Vert' };
   const total = Object.values(cp).reduce((a, b) => a + b, 0);
@@ -175,7 +235,7 @@ function couleursBloc(decks, plays) {
 }
 
 // Hauts faits (succès) d'un joueur, calculés depuis le log.
-function hautsFaits(model, jid, plays) {
+function hautsFaits(model, jid, usage, deckById) {
   const sdate = Object.fromEntries(model.soirees.map((s) => [s.id, s.date || '']));
   const mine = model.parties.filter((p) => p.participants.some((x) => x.joueur_id === jid));
   const duels = mine.filter((p) => p.type === '1v1')
@@ -194,8 +254,9 @@ function hautsFaits(model, jid, plays) {
     if (p.participants.find((x) => x.joueur_id === jid).place === 1) podsWon++;
   }
   const cols = new Set();
-  for (const dk of model.decks.filter((d) => d.joueur_id === jid)) {
-    if ((plays[dk.id] || 0) > 0) for (const c of (dk.couleurs || [])) cols.add(c);
+  for (const id of Object.keys(usage)) {
+    const dk = deckById[id];
+    if (dk) for (const c of (dk.couleurs || [])) cols.add(c);
   }
   const total = mine.length;
   const wr1 = (v1 + d1) ? v1 / (v1 + d1) : 0;
@@ -213,8 +274,8 @@ function hautsFaits(model, jid, plays) {
   ];
 }
 
-function hautsFaitsBloc(model, jid, plays) {
-  const list = hautsFaits(model, jid, plays);
+function hautsFaitsBloc(model, jid, usage, deckById) {
+  const list = hautsFaits(model, jid, usage, deckById);
   return `<div class="badges">${list.map((b) => `
     <div class="badge-hf ${b.got ? 'got' : 'locked'}">
       <span class="bhf-emo">${b.got ? b.emo : '🔒'}</span>
@@ -244,17 +305,22 @@ function h2hBloc(model, jid, h2h) {
   </table></div>`;
 }
 
-function decksBloc(cmdDecks, decks, plays) {
-  if (!decks.length) return '<div class="empty">Aucun deck enregistré.</div>';
-  const stat = Object.fromEntries(cmdDecks.map((d) => [d.id, d]));
-  const corps = decks.map((d) => {
-    const s = stat[d.id];
+// Decks joués par le joueur (emprunts inclus), avec SES stats sur chaque deck.
+function decksBloc(model, jid, usage, deckById) {
+  // union : decks possédés (même jamais joués) + decks joués (dont empruntés)
+  const ids = [...new Set([...decksDe(jid).map((d) => d.id), ...Object.keys(usage)])];
+  if (!ids.length) return '<div class="empty">Aucun deck.</div>';
+  const corps = ids.map((id) => {
+    const d = deckById[id];
+    if (!d) return '';
+    const u = usage[id] || { parties: 0, victoires: 0 };
+    const emprunt = d.joueur_id !== jid;
     return `<tr>
-      <td class="desig">${esc(d.nom)}<small>${esc(d.commandant || '')}</small></td>
+      <td class="desig">${esc(d.nom)}${emprunt ? ' <span class="tag-emprunt">emprunt</span>' : ''}<small>${esc(d.commandant || '')}</small></td>
       <td>${(d.couleurs || []).map((c) => `<span class="mana-dot mana-${c.toLowerCase()}"></span>`).join('') || '—'}</td>
-      <td class="num">${plays[d.id] || 0}</td>
-      <td class="num">${s ? s.victoires : 0}</td>
-      <td class="num">${s ? pct(s.winrate) : '—'}</td>
+      <td class="num">${u.parties}</td>
+      <td class="num">${u.victoires}</td>
+      <td class="num">${u.parties ? pct(u.victoires / u.parties) : '—'}</td>
     </tr>`;
   }).join('');
   return `<div class="tablewrap"><table>
@@ -271,39 +337,4 @@ function idx(arr, cle) {
     if (id) out[id] = l;
   }
   return out;
-}
-
-// Compte le nombre de parties où chaque deck a été utilisé (deck_id présent).
-function deckPlays(model) {
-  const out = {};
-  for (const p of model.parties) {
-    for (const x of (p.participants || [])) {
-      if (x.deck_id) out[x.deck_id] = (out[x.deck_id] || 0) + 1;
-    }
-  }
-  return out;
-}
-
-// Couleur(s) de mana les plus jouées (parties pondérées par deck), ordre WUBRG.
-function couleursDominantes(decks, plays) {
-  const cp = {};
-  for (const d of decks) {
-    const n = plays[d.id] || 0;
-    if (!n) continue;
-    for (const col of (d.couleurs || [])) cp[col] = (cp[col] || 0) + n;
-  }
-  const max = Math.max(0, ...Object.values(cp));
-  if (max === 0) return [];
-  return ['W', 'U', 'B', 'R', 'G'].filter((c) => cp[c] === max);
-}
-
-// Dégradé CSS à paliers nets pour un jeu de couleurs de mana.
-function manaGradient(cols) {
-  const varOf = { W: '--w', U: '--u', B: '--b', R: '--r', G: '--g' };
-  const ordered = ['W', 'U', 'B', 'R', 'G'].filter((c) => cols.includes(c));
-  if (!ordered.length) return '';
-  if (ordered.length === 1) return `linear-gradient(90deg, var(${varOf[ordered[0]]}) 0 100%)`;
-  const step = 100 / ordered.length;
-  const stops = ordered.map((c, i) => `var(${varOf[c]}) ${i * step}% ${(i + 1) * step}%`).join(', ');
-  return `linear-gradient(90deg, ${stops})`;
 }

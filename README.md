@@ -88,8 +88,18 @@ jurande/
     ├── github.js         # publication via API GitHub (token, Contents API)
     ├── ranking.js        # ELO ×2 + points Commander (joueur/deck)
     ├── util.js           # helpers + sparkline SVG
-    └── views/            # classement, historique, joueurs, rivalites, saisie, reglages
+    └── views/            # _shared (briques communes) + classement, historique,
+                          #   joueurs, decks, rivalites, saisie, reglages
 ```
+
+## Où se fait quoi
+
+- **Saisie** : publication, création de soirée, saisie des parties (onglets
+  Commander / Construit / Limité) et gestion des saisons.
+- **Joueurs** : cartes + fiche détaillée ; ajout/édition/suppression des joueurs.
+- **Decks** : une carte par deck (un deck cumule ses stats même *prêté* à
+  d'autres joueurs) ; ajout/édition/suppression.
+- **Historique** : soirées et parties, avec édition/suppression sur place.
 
 ## Pistes suivantes
 

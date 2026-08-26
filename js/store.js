@@ -148,6 +148,13 @@ export function removeSoiree(id) {
   toucher();
 }
 
+export function updateSoiree(o) {
+  const e = model.soirees.find((x) => x.id === o.id);
+  if (!e) return;
+  Object.assign(e, o);
+  toucher();
+}
+
 export function addPartie(o) {
   o.id = genId('p');
   // rattache la saison depuis la soirée si absente
