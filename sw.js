@@ -8,7 +8,7 @@
 //
 // Bump CACHE quand tu veux forcer la purge de l'ancien cache.
 
-const CACHE = 'jurande-v11';
+const CACHE = 'jurande-v12';
 const ASSETS = [
   '.', 'index.html', 'manifest.webmanifest',
   'css/styles.css',

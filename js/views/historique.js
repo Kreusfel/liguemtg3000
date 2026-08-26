@@ -17,10 +17,14 @@ export function renderHistorique(container, ctx) {
   const dn = Object.fromEntries(model.decks.map((d) => [d.id, d]));
   const sn = Object.fromEntries(model.saisons.map((s) => [s.id, s.nom]));
 
+  // Filtres au niveau partie (joueur/type/format) : quand aucun n'est actif, on
+  // affiche TOUTES les soirées de la saison — même vides — pour pouvoir les
+  // éditer/supprimer. Sinon on ne garde que celles ayant une partie qui matche.
+  const filtreParties = filtre.joueur || filtre.type || filtre.format;
   const blocs = soirees()
     .filter((e) => !filtre.saison || e.saison_id === filtre.saison)
     .map((e) => ({ e, parties: partiesDe(e.id).filter(matchPartie) }))
-    .filter(({ e, parties }) => parties.length || editing.soiree === e.id);
+    .filter(({ e, parties }) => parties.length || editing.soiree === e.id || !filtreParties);
 
   container.innerHTML = `
     <h1>Historique</h1>
