@@ -69,6 +69,9 @@ export function renderClassement(container, ctx) {
     <h2>Commander — Couleurs</h2>
     <p class="sub">Winrate par couleur de mana (chaque participation compte pour chaque couleur du deck joué).</p>
     ${tableCouleurs(statsCouleurs(model, sid))}
+
+    <h2>🏅 Récompenses de la saison</h2>
+    ${blocRecompenses(recompenses(model, sid))}
   `;
 
   container.querySelector('#c-saison').onchange = (e) => { saisonSel = e.target.value; ctx.refresh(); };
@@ -154,6 +157,63 @@ function tableCmdDecks(lignes) {
     <thead><tr><th>#</th><th>Deck</th><th>Joueur</th><th>Couleurs</th><th class="num">Points</th><th class="num">Parties</th><th class="num">Victoires</th><th class="num">Winrate</th></tr></thead>
     <tbody>${corps}</tbody>
   </table></div>`;
+}
+
+// Récompenses de saison : MVP (victoires), progression ELO, assiduité.
+function recompenses(model, sid) {
+  const parties = model.parties.filter((p) => !sid || p.saison_id === sid);
+  const jn = Object.fromEntries(model.joueurs.map((j) => [j.id, j]));
+  const stat = {};
+  const S = (id) => stat[id] || (stat[id] = { parties: 0, victoires: 0 });
+  for (const p of parties) {
+    for (const part of p.participants) {
+      if (!part.joueur_id) continue;
+      const s = S(part.joueur_id);
+      s.parties++;
+      const win = p.type === 'pod' ? part.place === 1 : part.resultat === 'V';
+      if (win) s.victoires++;
+    }
+  }
+  const ids = Object.keys(stat);
+  if (!ids.length) return null;
+
+  const assidu = ids.reduce((a, b) => (stat[b].parties > stat[a].parties ? b : a));
+  const mvp = ids.reduce((a, b) => {
+    const wa = stat[a].victoires, wb = stat[b].victoires;
+    if (wb !== wa) return wb > wa ? b : a;
+    return (stat[b].victoires / stat[b].parties) > (stat[a].victoires / stat[a].parties) ? b : a;
+  });
+  // meilleure progression ELO (delta fin-début, meilleur des deux pools)
+  const prog = {};
+  for (const cat of ['construit', 'limite']) {
+    const tl = eloTimeline(model, cat, sid);
+    for (const id of Object.keys(tl)) {
+      const s = tl[id], delta = s[s.length - 1] - s[0];
+      if (!(id in prog) || delta > prog[id]) prog[id] = delta;
+    }
+  }
+  const progIds = Object.keys(prog);
+  const progId = progIds.length ? progIds.reduce((a, b) => (prog[b] > prog[a] ? b : a)) : null;
+
+  return {
+    mvp: { j: jn[mvp], v: stat[mvp].victoires },
+    prog: progId ? { j: jn[progId], v: prog[progId] } : null,
+    assidu: { j: jn[assidu], v: stat[assidu].parties },
+  };
+}
+
+function blocRecompenses(r) {
+  if (!r) return '<div class="empty">Pas encore de parties cette saison.</div>';
+  const card = (emo, lib, w, metric) => `<div class="rcard award">
+    <span class="rc-lib">${emo} ${lib}</span>
+    <b class="rc-val" style="font-size:18px">${w && w.j ? esc(w.j.nom) : '<span class="rc-vide">—</span>'}</b>
+    <span class="rc-sub">${w && w.j ? metric : ''}</span>
+  </div>`;
+  return `<div class="resume">
+    ${card('🏆', 'MVP', r.mvp, r.mvp ? `${r.mvp.v} victoire${r.mvp.v > 1 ? 's' : ''}` : '')}
+    ${card('📈', 'Progression ELO', r.prog, r.prog ? `${r.prog.v >= 0 ? '+' : ''}${r0(r.prog.v)} pts` : '')}
+    ${card('🎖️', 'Plus assidu', r.assidu, r.assidu ? `${r.assidu.v} parties` : '')}
+  </div>`;
 }
 
 function tableCouleurs(lignes) {
