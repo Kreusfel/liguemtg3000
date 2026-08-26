@@ -23,9 +23,9 @@ export function renderSaisie(container, ctx) {
       <div style="margin-top:14px"><button class="btn btn-noir" id="so-add">Créer la soirée</button></div>
     </div>
 
-    ${formLimite(model)}
-
-    ${formCommander(model)}
+    <h2>Saisie des parties</h2>
+    ${saisieTabsBar()}
+    <div id="saisie-panel"></div>
 
     <h2>Dernières parties saisies</h2>
     ${listeRecentes(model)}
@@ -39,10 +39,46 @@ export function renderSaisie(container, ctx) {
 
   wirePublication(container, ctx);
   wireSoiree(container, ctx);
-  wireLimite(container, ctx, model);
-  wireCommander(container, ctx, model);
+  wireSaisieTabs(container, ctx, model);
+  renderPanel(container, ctx, model);
   wireGestion(container, ctx, model);
   wireRecentes(container, ctx);
+}
+
+// --- onglets de saisie (un type de partie à la fois) ------------------------
+// Une soirée mélange rarement plusieurs types : on n'affiche qu'un formulaire.
+// `saisieTab` survit aux ctx.refresh() (état module).
+const SAISIE_TABS = [
+  { id: 'commander', label: 'Commander · pods' },
+  { id: 'construit', label: 'Construit · 1v1' },
+  { id: 'limite', label: 'Limité · 1v1' },
+];
+let saisieTab = 'commander';
+
+function saisieTabsBar() {
+  return `<div class="saisie-tabs" role="tablist">${SAISIE_TABS.map((t) =>
+    `<button role="tab" type="button" data-st="${t.id}" aria-selected="${t.id === saisieTab}">${t.label}</button>`).join('')}</div>`;
+}
+function wireSaisieTabs(container, ctx, model) {
+  container.querySelectorAll('.saisie-tabs [data-st]').forEach((b) => {
+    b.onclick = () => {
+      if (b.dataset.st === saisieTab) return;
+      saisieTab = b.dataset.st;
+      container.querySelectorAll('.saisie-tabs [data-st]')
+        .forEach((x) => x.setAttribute('aria-selected', String(x.dataset.st === saisieTab)));
+      renderPanel(container, ctx, model);   // re-rend uniquement le panneau actif
+    };
+  });
+}
+function renderPanel(container, ctx, model) {
+  const host = container.querySelector('#saisie-panel');
+  if (saisieTab === 'commander') {
+    host.innerHTML = formCommander(model);
+    wireCommander(container, ctx, model);
+  } else {
+    host.innerHTML = form1v1(model, saisieTab);
+    wire1v1(container, ctx, model, saisieTab);
+  }
 }
 
 // --- barre de publication ---------------------------------------------------
@@ -125,15 +161,19 @@ function brancherPodRow(row) {
   row.querySelector('.pr-del').onclick = () => { if (row.parentElement.children.length > 1) row.remove(); };
 }
 
-// --- soirée limitée : saisie groupée (round-robin) --------------------------
-function formLimite(model) {
+// --- soirée 1v1 (Construit ou Limité) : saisie groupée round-robin ----------
+function form1v1(model, cat) {
+  const isLim = cat === 'limite';
+  const titre = isLim ? 'Soirée Limité — matchs 1v1' : 'Soirée Construit — matchs 1v1';
+  const pool = isLim ? 'ELO Limité' : 'ELO Construit';
+  const fmtPh = isLim ? 'scellé, draft…' : 'pauper, modern…';
   return `<div class="form-card">
-    <h2>Soirée limitée — saisie groupée</h2>
+    <h2>${titre}</h2>
     <p class="mini">Coche les présents, génère toutes les rondes (chacun affronte chacun), indique le vainqueur
-      de chaque match, puis enregistre tout d'un coup. Les matchs comptent en <b>ELO Limité</b>.</p>
+      de chaque match, puis enregistre tout d'un coup. Les matchs comptent en <b>${pool}</b>.</p>
     <div class="fgrid">
       <div><label>Soirée</label><select id="li-soiree">${optSoirees(model)}</select></div>
-      <div><label>Format</label><input type="text" id="li-format" placeholder="scellé, draft…"></div>
+      <div><label>Format</label><input type="text" id="li-format" placeholder="${fmtPh}"></div>
     </div>
     <label style="margin-top:12px">Joueurs présents</label>
     <div class="chk-joueurs" id="li-joueurs">
@@ -149,7 +189,7 @@ function formLimite(model) {
   </div>`;
 }
 
-function wireLimite(container, ctx, model) {
+function wire1v1(container, ctx, model, cat) {
   const jn = Object.fromEntries(model.joueurs.map((j) => [j.id, j.nom]));
   const matchs = container.querySelector('#li-matchs');
   const save = container.querySelector('#li-save');
@@ -187,7 +227,7 @@ function wireLimite(container, ctx, model) {
       const rA = res === 'A' ? 'V' : res === 'B' ? 'D' : 'N';
       const rB = res === 'B' ? 'V' : res === 'A' ? 'D' : 'N';
       list.push({
-        soiree_id, type: '1v1', categorie: 'limite', format,
+        soiree_id, type: '1v1', categorie: cat, format,
         participants: [{ joueur_id: a, deck_id: null, resultat: rA }, { joueur_id: b, deck_id: null, resultat: rB }],
       });
     });
@@ -201,7 +241,7 @@ function wireLimite(container, ctx, model) {
 // --- soirée Commander : saisie groupée (plusieurs pods) ---------------------
 function formCommander(model) {
   return `<div class="form-card">
-    <h2>Soirée Commander — saisie groupée</h2>
+    <h2>Soirée Commander — pods</h2>
     <p class="mini">Enregistre plusieurs pods de la même soirée d'un coup. Place 1 = vainqueur du pod.</p>
     <div class="fgrid"><div><label>Soirée</label><select id="co-soiree">${optSoirees(model)}</select></div></div>
     <div id="co-pods" class="pods-groupe"></div>

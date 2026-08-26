@@ -131,6 +131,15 @@ tr.podium-3{background:#fdf3e9 !important}
 .deck-pill small{display:block;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:400}
 
 /* ---------- formulaires / saisie ---------- */
+/* Sous-onglets de saisie : un seul type de partie affiché à la fois. */
+.saisie-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.saisie-tabs button{font-family:'Fredoka',sans-serif;font-size:14px;font-weight:600;background:var(--panel);
+  border:2px solid var(--line2);border-radius:var(--rp);padding:8px 16px;cursor:pointer;color:var(--ink);
+  transition:transform .08s,background .15s,color .15s}
+.saisie-tabs button:hover{transform:translateY(-2px)}
+.saisie-tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;
+  box-shadow:0 4px 12px rgba(122,75,208,.3)}
+.saisie-tabs button:focus-visible{outline:3px solid var(--accent2);outline-offset:2px}
 .form-card{background:var(--panel);border-radius:var(--rc);box-shadow:var(--shadow);padding:20px;margin-bottom:20px}
 .form-card h2{margin-top:0}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
