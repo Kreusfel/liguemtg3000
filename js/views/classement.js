@@ -3,8 +3,8 @@
 // points (Joueur + Deck). Tout est recalculé à la volée depuis le log.
 
 import { getModel, saisons as listeSaisons } from '../store.js';
-import { classementElo, classementCommander, statsCouleurs, saisonActive } from '../ranking.js';
-import { esc, pct, r0 } from '../util.js';
+import { classementElo, classementCommander, statsCouleurs, eloTimeline, saisonActive } from '../ranking.js';
+import { esc, pct, r0, sparkline } from '../util.js';
 
 let saisonSel = null;      // mémorisé entre rendus
 let montrerInactifs = false;
@@ -56,8 +56,8 @@ export function renderClassement(container, ctx) {
     ${resumeSaison(resume)}
 
     <div class="deux-col">
-      <div>${tableElo('⚔️ ELO — Construit', eloC, 'u')}</div>
-      <div>${tableElo('🎲 ELO — Limité', eloL, 'g')}</div>
+      <div>${tableElo('⚔️ ELO — Construit', eloC, 'u', eloTimeline(model, 'construit', sid), 'var(--u)')}</div>
+      <div>${tableElo('🎲 ELO — Limité', eloL, 'g', eloTimeline(model, 'limite', sid), 'var(--g)')}</div>
     </div>
 
     <h2>Commander — Joueurs</h2>
@@ -96,21 +96,22 @@ function resumeSaison(r) {
   </div>`).join('')}</div>`;
 }
 
-function tableElo(titre, lignes, cls = '') {
+function tableElo(titre, lignes, cls = '', series = {}, stroke = 'currentColor') {
   const corps = lignes.length ? lignes.map((l, i) => `
     <tr class="${i < 3 ? 'podium podium-' + (i + 1) : ''}">
       <td class="num rang">${medaille(i)}</td>
       <td class="desig">${esc(l.joueur ? l.joueur.nom : '?')}</td>
       <td class="num elo">${r0(l.rating)}</td>
+      <td class="spark-cell">${sparkline(series[l.joueur_id], stroke, 90, 26)}</td>
       <td class="num">${l.parties}</td>
       <td class="num bilan">${l.v}–${l.d}${l.n ? '–' + l.n : ''}</td>
       <td class="num">${pct(l.winrate)}</td>
     </tr>`).join('')
-    : `<tr><td colspan="6" class="empty">Aucune partie enregistrée.</td></tr>`;
+    : `<tr><td colspan="7" class="empty">Aucune partie enregistrée.</td></tr>`;
   return `<div class="bloc bloc-${cls}">
     <div class="bloc-head">${titre}</div>
     <div class="tablewrap"><table>
-      <thead><tr><th>#</th><th>Joueur</th><th class="num">Rating</th><th class="num">Parties</th><th class="num">V–D</th><th class="num">Winrate</th></tr></thead>
+      <thead><tr><th>#</th><th>Joueur</th><th class="num">Rating</th><th>Évol.</th><th class="num">Parties</th><th class="num">V–D</th><th class="num">Winrate</th></tr></thead>
       <tbody>${corps}</tbody>
     </table></div>
   </div>`;

@@ -3,7 +3,7 @@
 
 import { getModel, decksDe } from '../store.js';
 import { classementElo, classementCommander, eloTimeline, faceAFace } from '../ranking.js';
-import { esc, pct, r0 } from '../util.js';
+import { esc, pct, r0, sparkline } from '../util.js';
 
 let selJoueur = null;   // fiche ouverte (null = grille)
 
@@ -153,23 +153,8 @@ function carteElo(titre, stat, serie, stroke) {
     <span class="rc-lib">${titre}</span>
     <b class="rc-val">${stat ? r0(stat.rating) : '—'}</b>
     <span class="rc-sub">${stat ? `${stat.v}–${stat.d}${stat.n ? '–' + stat.n : ''} · ${pct(stat.winrate)}` : 'aucune partie'}</span>
-    ${sparkline(serie, stroke)}
+    ${sparkline(serie, stroke, 210, 40)}
   </div>`;
-}
-
-// Mini-graphe SVG d'une série de ratings.
-function sparkline(serie, stroke) {
-  if (!serie || serie.length < 2) return '';
-  const w = 210, h = 40, pad = 3;
-  const min = Math.min(...serie), max = Math.max(...serie), range = (max - min) || 1;
-  const pts = serie.map((v, i) => {
-    const x = pad + (i / (serie.length - 1)) * (w - 2 * pad);
-    const y = pad + (1 - (v - min) / range) * (h - 2 * pad);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(' ');
-  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="évolution du rating">
-    <polyline points="${pts}" fill="none" stroke="${stroke}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-  </svg>`;
 }
 
 function couleursBloc(decks, plays) {
