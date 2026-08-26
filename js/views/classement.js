@@ -6,36 +6,54 @@ import { getModel, saisons as listeSaisons } from '../store.js';
 import { classementElo, classementCommander, saisonActive } from '../ranking.js';
 import { esc, pct, r0 } from '../util.js';
 
-let saisonSel = null;   // mémorisé entre rendus
+let saisonSel = null;      // mémorisé entre rendus
+let montrerInactifs = false;
+
+// Retire les joueurs inactifs (sauf si la case est cochée). `cle` pointe vers
+// l'objet joueur de chaque ligne ('joueur' pour l'ELO, 'entite' pour Commander).
+function filtreActifs(lignes, cle) {
+  if (montrerInactifs) return lignes;
+  return lignes.filter((l) => { const j = l[cle]; return j && j.actif !== false; });
+}
 
 export function renderClassement(container, ctx) {
   const model = getModel();
   const saisons = listeSaisons();
   if (saisonSel === null) { const a = saisonActive(model); saisonSel = a ? a.id : ''; }
+  const sid = saisonSel || null;
+
+  const eloC = filtreActifs(classementElo(model, 'construit', sid), 'joueur');
+  const eloL = filtreActifs(classementElo(model, 'limite', sid), 'joueur');
+  const cmd = classementCommander(model, sid);
+  const cmdJ = filtreActifs(cmd.joueurs, 'entite');
 
   container.innerHTML = `
     <div class="titre-ligne">
       <h1>Classement</h1>
-      <select id="c-saison">
-        <option value="">Toutes saisons</option>
-        ${saisons.map((s) => `<option value="${s.id}" ${s.id === saisonSel ? 'selected' : ''}>${esc(s.nom)}</option>`).join('')}
-      </select>
+      <div class="tl-controls">
+        <label class="chk"><input type="checkbox" id="c-inactifs" ${montrerInactifs ? 'checked' : ''}> Afficher inactifs</label>
+        <select id="c-saison">
+          <option value="">Toutes saisons</option>
+          ${saisons.map((s) => `<option value="${s.id}" ${s.id === saisonSel ? 'selected' : ''}>${esc(s.nom)}</option>`).join('')}
+        </select>
+      </div>
     </div>
     <p class="sub">Classements recalculés en direct depuis les résultats. L'ELO Construit et l'ELO Limité sont indépendants.</p>
 
     <div class="deux-col">
-      <div>${tableElo('⚔️ ELO — Construit', classementElo(model, 'construit', saisonSel || null), 'u')}</div>
-      <div>${tableElo('🎲 ELO — Limité', classementElo(model, 'limite', saisonSel || null), 'g')}</div>
+      <div>${tableElo('⚔️ ELO — Construit', eloC, 'u')}</div>
+      <div>${tableElo('🎲 ELO — Limité', eloL, 'g')}</div>
     </div>
 
     <h2>Commander — Joueurs</h2>
-    ${tableCmdJoueurs(classementCommander(model, saisonSel || null).joueurs)}
+    ${tableCmdJoueurs(cmdJ)}
 
     <h2>Commander — Decks</h2>
-    ${tableCmdDecks(classementCommander(model, saisonSel || null).decks)}
+    ${tableCmdDecks(cmd.decks)}
   `;
 
   container.querySelector('#c-saison').onchange = (e) => { saisonSel = e.target.value; ctx.refresh(); };
+  container.querySelector('#c-inactifs').onchange = (e) => { montrerInactifs = e.target.checked; ctx.refresh(); };
 }
 
 function medaille(i) { return i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1; }

@@ -57,7 +57,10 @@ nav button:focus-visible{outline:3px solid var(--accent2);outline-offset:2px}
 /* ---------- layout ---------- */
 main{padding:24px;max-width:1200px;margin:0 auto}
 .titre-ligne{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.titre-ligne select{margin-left:auto;width:auto}
+.titre-ligne select{width:auto}
+.tl-controls{margin-left:auto;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.tl-controls .chk{display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;color:var(--ink);margin:0;width:auto;font-weight:700;font-size:13px}
+.tl-controls .chk input{width:auto}
 h1{font-family:'Fredoka',sans-serif;font-size:28px;font-weight:700;margin:0 0 4px;color:var(--accent-d)}
 h2{font-family:'Fredoka',sans-serif;font-size:19px;font-weight:600;margin:30px 0 12px;color:var(--ink)}
 .sub{color:var(--muted);font-size:13.5px;margin:0 0 22px;max-width:75ch}
