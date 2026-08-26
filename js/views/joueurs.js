@@ -4,6 +4,7 @@
 import { getModel, decksDe } from '../store.js';
 import { classementElo, classementCommander, eloTimeline, faceAFace } from '../ranking.js';
 import { esc, pct, r0, sparkline } from '../util.js';
+import { deckPlays, couleursDominantes, manaGradient } from './_shared.js';
 
 let selJoueur = null;   // fiche ouverte (null = grille)
 
@@ -271,39 +272,4 @@ function idx(arr, cle) {
     if (id) out[id] = l;
   }
   return out;
-}
-
-// Compte le nombre de parties où chaque deck a été utilisé (deck_id présent).
-function deckPlays(model) {
-  const out = {};
-  for (const p of model.parties) {
-    for (const x of (p.participants || [])) {
-      if (x.deck_id) out[x.deck_id] = (out[x.deck_id] || 0) + 1;
-    }
-  }
-  return out;
-}
-
-// Couleur(s) de mana les plus jouées (parties pondérées par deck), ordre WUBRG.
-function couleursDominantes(decks, plays) {
-  const cp = {};
-  for (const d of decks) {
-    const n = plays[d.id] || 0;
-    if (!n) continue;
-    for (const col of (d.couleurs || [])) cp[col] = (cp[col] || 0) + n;
-  }
-  const max = Math.max(0, ...Object.values(cp));
-  if (max === 0) return [];
-  return ['W', 'U', 'B', 'R', 'G'].filter((c) => cp[c] === max);
-}
-
-// Dégradé CSS à paliers nets pour un jeu de couleurs de mana.
-function manaGradient(cols) {
-  const varOf = { W: '--w', U: '--u', B: '--b', R: '--r', G: '--g' };
-  const ordered = ['W', 'U', 'B', 'R', 'G'].filter((c) => cols.includes(c));
-  if (!ordered.length) return '';
-  if (ordered.length === 1) return `linear-gradient(90deg, var(${varOf[ordered[0]]}) 0 100%)`;
-  const step = 100 / ordered.length;
-  const stops = ordered.map((c, i) => `var(${varOf[c]}) ${i * step}% ${(i + 1) * step}%`).join(', ');
-  return `linear-gradient(90deg, ${stops})`;
 }

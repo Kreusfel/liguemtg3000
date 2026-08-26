@@ -8,6 +8,10 @@ import { publier } from '../github.js';
 import { peutPublier } from '../github.js';
 import { classementCommander, classementElo } from '../ranking.js';
 import { esc, dateFr, today } from '../util.js';
+import {
+  optJoueurs, optJoueursSel, optSaisons, optSoirees,
+  rowPod, creerRow, brancherPodRow, parseCouleurs,
+} from './_shared.js';
 
 export function renderSaisie(container, ctx) {
   const model = store.getModel();
@@ -149,36 +153,6 @@ function wireSoiree(container, ctx) {
   };
 }
 
-// --- lignes de pod (réutilisées par la saisie Commander groupée) -------------
-function rowPod(model) {
-  return `<div class="pod-row">
-    <select class="pr-joueur">${optJoueurs(model, true)}</select>
-    <select class="pr-deck"><option value="">— deck —</option></select>
-    <input class="pr-place" type="number" min="1" max="8" placeholder="place">
-    <button class="btn btn-mini pr-del" type="button">✕</button>
-  </div>`;
-}
-
-// Crée un élément DOM depuis une chaîne HTML (première racine).
-function creerRow(html) {
-  const w = document.createElement('div');
-  w.innerHTML = html;
-  return w.firstElementChild;
-}
-
-// Branche une ligne de pod : filtrage des decks selon le joueur + suppression.
-function brancherPodRow(row) {
-  const jsel = row.querySelector('.pr-joueur');
-  const dsel = row.querySelector('.pr-deck');
-  const maj = () => {
-    const decks = store.decksDe(jsel.value);
-    dsel.innerHTML = '<option value="">— deck —</option>'
-      + decks.map((d) => `<option value="${d.id}">${esc(d.nom)}</option>`).join('');
-  };
-  jsel.onchange = maj; maj();
-  row.querySelector('.pr-del').onclick = () => { if (row.parentElement.children.length > 1) row.remove(); };
-}
-
 // --- soirée 1v1 (Construit ou Limité) : saisie groupée round-robin ----------
 function form1v1(model, cat) {
   const isLim = cat === 'limite';
@@ -190,7 +164,7 @@ function form1v1(model, cat) {
     <p class="mini">Coche les présents, génère toutes les rondes (chacun affronte chacun), indique le vainqueur
       de chaque match, puis enregistre tout d'un coup. Les matchs comptent en <b>${pool}</b>.</p>
     <div class="fgrid">
-      <div><label>Soirée</label><select id="li-soiree">${optSoirees(model)}</select></div>
+      <div><label>Soirée</label><select id="li-soiree">${optSoirees()}</select></div>
       <div><label>Format</label><input type="text" id="li-format" placeholder="${fmtPh}"></div>
     </div>
     <label style="margin-top:12px">Joueurs présents</label>
@@ -267,7 +241,7 @@ function formCommander(model) {
   return `<div class="form-card">
     <h2>Soirée Commander — pods</h2>
     <p class="mini">Enregistre plusieurs pods de la même soirée d'un coup. Place 1 = vainqueur du pod.</p>
-    <div class="fgrid"><div><label>Soirée</label><select id="co-soiree">${optSoirees(model)}</select></div></div>
+    <div class="fgrid"><div><label>Soirée</label><select id="co-soiree">${optSoirees()}</select></div></div>
     <div id="co-pods" class="pods-groupe"></div>
     <div style="margin-top:10px"><button class="btn" id="co-add-pod" type="button">+ Ajouter un pod</button></div>
     <div style="margin-top:14px"><button class="btn btn-noir" id="co-save">Enregistrer tous les pods</button></div>
@@ -368,7 +342,7 @@ function formEditPartie(model, p) {
   if (p.type === 'pod') {
     return `<div class="form-card" id="edit-partie">
       <h3>Modifier un pod Commander</h3>
-      <div class="fgrid"><div><label>Soirée</label><select id="ep-soiree">${optSoirees(model)}</select></div></div>
+      <div class="fgrid"><div><label>Soirée</label><select id="ep-soiree">${optSoirees()}</select></div></div>
       <div class="pod-rows" id="ep-rows">${p.participants.map(() => rowPod(model)).join('')}</div>
       <button class="btn btn-mini" id="ep-add-row" type="button">+ joueur</button>
       <div class="hint">Place 1 = vainqueur du pod.</div>
@@ -384,7 +358,7 @@ function formEditPartie(model, p) {
   return `<div class="form-card" id="edit-partie">
     <h3>Modifier un match 1v1</h3>
     <div class="fgrid">
-      <div><label>Soirée</label><select id="ep-soiree">${optSoirees(model)}</select></div>
+      <div><label>Soirée</label><select id="ep-soiree">${optSoirees()}</select></div>
       <div><label>Catégorie</label><select id="ep-cat">
         <option value="construit" ${!isLim ? 'selected' : ''}>Construit</option>
         <option value="limite" ${isLim ? 'selected' : ''}>Limité</option></select></div>
@@ -751,22 +725,3 @@ function actionGestion(btn, container, ctx, model) {
   }
 }
 
-// "RG" / "wubrg" -> ['R','G'] (lettres de mana valides uniquement).
-function parseCouleurs(s) {
-  return String(s || '').toUpperCase().replace(/[^WUBRG]/g, '').split('').filter(Boolean);
-}
-
-// --- options <select> -------------------------------------------------------
-function optJoueurs(model, vide) {
-  return (vide ? '<option value="">— joueur —</option>' : '')
-    + model.joueurs.map((j) => `<option value="${j.id}">${esc(j.nom)}</option>`).join('');
-}
-function optJoueursSel(model, sel) {
-  return model.joueurs.map((j) => `<option value="${j.id}" ${j.id === sel ? 'selected' : ''}>${esc(j.nom)}</option>`).join('');
-}
-function optSaisons(model) {
-  return model.saisons.map((s) => `<option value="${s.id}" ${s.active ? 'selected' : ''}>${esc(s.nom)}</option>`).join('');
-}
-function optSoirees(model) {
-  return store.soirees().map((e) => `<option value="${e.id}">${dateFr(e.date)}${e.titre ? ' · ' + esc(e.titre) : ''}${e.lieu ? ' · ' + esc(e.lieu) : ''}</option>`).join('');
-}
