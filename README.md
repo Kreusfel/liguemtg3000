@@ -87,12 +87,12 @@ jurande/
     ├── store.js          # état, brouillon local, mutations
     ├── github.js         # publication via API GitHub (token, Contents API)
     ├── ranking.js        # ELO ×2 + points Commander (joueur/deck)
-    ├── util.js
-    └── views/            # classement, historique, joueurs, saisie, reglages
+    ├── util.js           # helpers + sparkline SVG
+    └── views/            # classement, historique, joueurs, rivalites, saisie, reglages
 ```
 
 ## Pistes suivantes
 
-- Profil joueur détaillé (courbe d'ELO, adversaire favori).
-- Stats de deck en Commander pour aider à équilibrer.
 - Génération de pods / pairings pour la soirée.
+- Export CSV d'un classement / de l'historique.
+- Saisie rapide « qui a gagné » et ELO prévisionnel avant match.

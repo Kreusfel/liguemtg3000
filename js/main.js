@@ -4,6 +4,7 @@ import { load, isDirty } from './store.js';
 import { renderClassement } from './views/classement.js';
 import { renderHistorique } from './views/historique.js';
 import { renderJoueurs } from './views/joueurs.js';
+import { renderRivalites } from './views/rivalites.js';
 import { renderSaisie } from './views/saisie.js';
 import { renderReglages } from './views/reglages.js';
 
@@ -11,6 +12,7 @@ const VIEWS = {
   classement: renderClassement,
   historique: renderHistorique,
   joueurs: renderJoueurs,
+  rivalites: renderRivalites,
   saisie: renderSaisie,
   reglages: renderReglages,
 };

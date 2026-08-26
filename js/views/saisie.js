@@ -6,6 +6,7 @@
 import * as store from '../store.js';
 import { publier } from '../github.js';
 import { peutPublier } from '../github.js';
+import { classementCommander, classementElo } from '../ranking.js';
 import { esc, dateFr, today } from '../util.js';
 
 export function renderSaisie(container, ctx) {
@@ -20,7 +21,10 @@ export function renderSaisie(container, ctx) {
         <div><label>Lieu</label><input type="text" id="so-lieu" placeholder="Chez… / boutique"></div>
         <div><label>Saison</label><select id="so-saison">${optSaisons(model)}</select></div>
       </div>
-      <div style="margin-top:14px"><button class="btn btn-noir" id="so-add">Créer la soirée</button></div>
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-noir" id="so-add">Créer la soirée</button>
+        <button class="btn" id="so-dup" title="Recrée une soirée (même lieu/saison, aujourd'hui) et pré-coche les présents de la dernière">⧉ Dupliquer la dernière</button>
+      </div>
     </div>
 
     <h2>Saisie des parties</h2>
@@ -28,7 +32,7 @@ export function renderSaisie(container, ctx) {
     <div id="saisie-panel"></div>
 
     <h2>Dernières parties saisies</h2>
-    ${listeRecentes(model)}
+    <div id="recentes-zone">${recentesZone(model)}</div>
 
     <div class="deux-col">
       ${gestionJoueurs(model)}
@@ -42,7 +46,7 @@ export function renderSaisie(container, ctx) {
   wireSaisieTabs(container, ctx, model);
   renderPanel(container, ctx, model);
   wireGestion(container, ctx, model);
-  wireRecentes(container, ctx);
+  wireRecentes(container, ctx, model);
 }
 
 // --- onglets de saisie (un type de partie à la fois) ------------------------
@@ -119,6 +123,9 @@ function wirePublication(container, ctx) {
 }
 
 // --- soirée -----------------------------------------------------------------
+// Présents à pré-cocher dans le prochain formulaire 1v1 (après duplication).
+let presetPresents = [];
+
 function wireSoiree(container, ctx) {
   container.querySelector('#so-add').onclick = () => {
     const date = container.querySelector('#so-date').value;
@@ -127,6 +134,14 @@ function wireSoiree(container, ctx) {
     if (!date) return ctx.toast('Renseigne une date.');
     store.addSoiree({ date, lieu, saison_id, notes: '' });
     ctx.toast('Soirée créée.');
+    ctx.refresh();
+  };
+  container.querySelector('#so-dup').onclick = () => {
+    const derniere = store.soirees()[0];   // la plus récente
+    if (!derniere) return ctx.toast('Aucune soirée à dupliquer.');
+    store.addSoiree({ date: today(), lieu: derniere.lieu || '', saison_id: derniere.saison_id || null, notes: '' });
+    presetPresents = [...new Set(store.partiesDe(derniere.id).flatMap((p) => p.participants.map((x) => x.joueur_id)))];
+    ctx.toast(presetPresents.length ? 'Soirée dupliquée — présents pré-cochés (onglets 1v1).' : 'Soirée dupliquée.');
     ctx.refresh();
   };
 }
@@ -194,6 +209,12 @@ function wire1v1(container, ctx, model, cat) {
   const matchs = container.querySelector('#li-matchs');
   const save = container.querySelector('#li-save');
   const info = container.querySelector('#li-info');
+
+  // Présents pré-cochés après une duplication de soirée (one-shot).
+  if (presetPresents.length) {
+    container.querySelectorAll('#li-joueurs input').forEach((i) => { if (presetPresents.includes(i.value)) i.checked = true; });
+    presetPresents = [];
+  }
 
   container.querySelector('#li-gen').onclick = () => {
     const ids = [...container.querySelectorAll('#li-joueurs input:checked')].map((i) => i.value);
@@ -308,6 +329,16 @@ function wireCommander(container, ctx, model) {
 }
 
 // --- parties récentes -------------------------------------------------------
+// La zone bascule entre la liste et le formulaire d'édition d'une partie.
+function recentesZone(model) {
+  if (editing.partie) {
+    const p = model.parties.find((x) => x.id === editing.partie);
+    if (p) return formEditPartie(model, p);
+    editing.partie = null;   // partie disparue : retour liste
+  }
+  return listeRecentes(model);
+}
+
 function listeRecentes(model) {
   const jn = Object.fromEntries(model.joueurs.map((j) => [j.id, j.nom]));
   const recentes = model.parties.slice(-8).reverse();
@@ -321,21 +352,126 @@ function listeRecentes(model) {
         : p.participants.map((x) => `${esc(jn[x.joueur_id] || '?')} (${x.resultat})`).join(' vs ');
       return `<tr><td><span class="ptag ptag-${p.type === 'pod' ? 'pod' : p.categorie}">${label}</span></td>
         <td>${detail}</td>
-        <td class="actions"><button class="btn btn-mini" data-del-partie="${p.id}">Supprimer</button></td></tr>`;
+        <td class="actions">
+          <button class="btn btn-mini" data-edit-partie="${p.id}">Modifier</button>
+          <button class="btn btn-mini" data-del-partie="${p.id}">Supprimer</button>
+        </td></tr>`;
     }).join('')}</tbody>
   </table></div>`;
 }
-function wireRecentes(container, ctx) {
+
+// Formulaire d'édition d'une partie (pod ou 1v1).
+function formEditPartie(model, p) {
+  if (p.type === 'pod') {
+    return `<div class="form-card" id="edit-partie">
+      <h3>Modifier un pod Commander</h3>
+      <div class="fgrid"><div><label>Soirée</label><select id="ep-soiree">${optSoirees(model)}</select></div></div>
+      <div class="pod-rows" id="ep-rows">${p.participants.map(() => rowPod(model)).join('')}</div>
+      <button class="btn btn-mini" id="ep-add-row" type="button">+ joueur</button>
+      <div class="hint">Place 1 = vainqueur du pod.</div>
+      <div style="margin-top:14px;display:flex;gap:8px">
+        <button class="btn btn-noir" id="ep-save">Enregistrer</button>
+        <button class="btn" id="ep-cancel">Annuler</button>
+      </div>
+    </div>`;
+  }
+  const isLim = p.categorie === 'limite';
+  const [A, B] = p.participants;
+  const res = A.resultat === 'V' ? 'A' : A.resultat === 'D' ? 'B' : 'N';
+  return `<div class="form-card" id="edit-partie">
+    <h3>Modifier un match 1v1</h3>
+    <div class="fgrid">
+      <div><label>Soirée</label><select id="ep-soiree">${optSoirees(model)}</select></div>
+      <div><label>Catégorie</label><select id="ep-cat">
+        <option value="construit" ${!isLim ? 'selected' : ''}>Construit</option>
+        <option value="limite" ${isLim ? 'selected' : ''}>Limité</option></select></div>
+      <div><label>Format</label><input type="text" id="ep-format" value="${esc(p.format || '')}"></div>
+    </div>
+    <div class="fgrid" style="margin-top:12px">
+      <div><label>Joueur A</label><select id="ep-a">${optJoueursSel(model, A.joueur_id)}</select></div>
+      <div><label>Joueur B</label><select id="ep-b">${optJoueursSel(model, B.joueur_id)}</select></div>
+      <div><label>Résultat</label><select id="ep-res">
+        <option value="A" ${res === 'A' ? 'selected' : ''}>A gagne</option>
+        <option value="B" ${res === 'B' ? 'selected' : ''}>B gagne</option>
+        <option value="N" ${res === 'N' ? 'selected' : ''}>Nul</option></select></div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="btn btn-noir" id="ep-save">Enregistrer</button>
+      <button class="btn" id="ep-cancel">Annuler</button>
+    </div>
+  </div>`;
+}
+
+function wireRecentes(container, ctx, model) {
   container.querySelectorAll('[data-del-partie]').forEach((b) => {
     b.onclick = () => { store.removePartie(b.dataset.delPartie); ctx.toast('Partie supprimée.'); ctx.refresh(); };
   });
+  container.querySelectorAll('[data-edit-partie]').forEach((b) => {
+    b.onclick = () => { editing.partie = b.dataset.editPartie; ctx.refresh(); };
+  });
+  const zone = container.querySelector('#edit-partie');
+  if (zone) wireEditPartie(container, ctx, model);
+}
+
+function wireEditPartie(container, ctx, model) {
+  const p = model.parties.find((x) => x.id === editing.partie);
+  if (!p) return;
+  container.querySelector('#ep-soiree').value = p.soiree_id;
+  const cancel = () => { editing.partie = null; ctx.refresh(); };
+  container.querySelector('#ep-cancel').onclick = cancel;
+
+  if (p.type === 'pod') {
+    // Pré-remplit chaque ligne (joueur -> decks du joueur -> deck -> place).
+    const rows = [...container.querySelectorAll('#ep-rows .pod-row')];
+    rows.forEach((row, i) => {
+      const part = p.participants[i];
+      row.querySelector('.pr-joueur').value = part.joueur_id || '';
+      brancherPodRow(row);
+      row.querySelector('.pr-deck').value = part.deck_id || '';
+      if (part.place != null) row.querySelector('.pr-place').value = part.place;
+    });
+    container.querySelector('#ep-add-row').onclick = () => {
+      const row = creerRow(rowPod(model));
+      container.querySelector('#ep-rows').appendChild(row);
+      brancherPodRow(row);
+    };
+    container.querySelector('#ep-save').onclick = () => {
+      const participants = [];
+      container.querySelectorAll('#ep-rows .pod-row').forEach((row) => {
+        const jid = row.querySelector('.pr-joueur').value;
+        if (!jid) return;
+        const did = row.querySelector('.pr-deck').value || null;
+        const pl = parseInt(row.querySelector('.pr-place').value, 10);
+        participants.push({ joueur_id: jid, deck_id: did, place: Number.isFinite(pl) ? pl : null });
+      });
+      if (participants.length < 2) return ctx.toast('Au moins 2 joueurs dans le pod.');
+      store.updatePartie({ id: p.id, soiree_id: container.querySelector('#ep-soiree').value, participants });
+      editing.partie = null; ctx.toast('Partie modifiée.'); ctx.refresh();
+    };
+  } else {
+    container.querySelector('#ep-save').onclick = () => {
+      const a = container.querySelector('#ep-a').value;
+      const b = container.querySelector('#ep-b').value;
+      if (!a || !b || a === b) return ctx.toast('Choisis deux joueurs différents.');
+      const r = container.querySelector('#ep-res').value;
+      const rA = r === 'A' ? 'V' : r === 'B' ? 'D' : 'N';
+      const rB = r === 'B' ? 'V' : r === 'A' ? 'D' : 'N';
+      store.updatePartie({
+        id: p.id, soiree_id: container.querySelector('#ep-soiree').value,
+        categorie: container.querySelector('#ep-cat').value,
+        format: container.querySelector('#ep-format').value.trim(),
+        participants: [{ joueur_id: a, deck_id: null, resultat: rA }, { joueur_id: b, deck_id: null, resultat: rB }],
+      });
+      editing.partie = null; ctx.toast('Partie modifiée.'); ctx.refresh();
+    };
+  }
 }
 
 // --- gestion joueurs / decks / saisons --------------------------------------
 // Édition inline : `editing` retient l'entité en cours de modification ; il
 // survit aux ctx.refresh() (état module) le temps que l'utilisateur enregistre
 // ou annule.
-const editing = { joueur: null, deck: null, saison: null };
+const editing = { joueur: null, deck: null, saison: null, partie: null };
 
 function gestionJoueurs(model) {
   return `<div class="form-card">
@@ -384,13 +520,42 @@ function ligneSaison(s) {
         <button class="btn btn-mini" data-act="sa-cancel">Annuler</button>
       </div></li>`;
   }
+  const etat = s.cloturee
+    ? `<b>(clôturée${s.fin ? ' le ' + dateFr(s.fin) : ''})</b>${palmaresLigne(s.palmares)}`
+    : (s.active ? ' <b>(active)</b>' : '');
+  const actions = s.cloturee
+    ? `<button class="btn btn-mini" data-act="sa-rouvrir">Rouvrir</button>
+       <button class="btn btn-mini" data-act="sa-del">Supprimer</button>`
+    : `<button class="btn btn-mini" data-act="sa-toggle">${s.active ? 'Désactiver' : 'Activer'}</button>
+       <button class="btn btn-mini" data-act="sa-cloturer">Clôturer</button>
+       <button class="btn btn-mini" data-act="sa-edit">Modifier</button>
+       <button class="btn btn-mini" data-act="sa-del">Supprimer</button>`;
   return `<li data-id="${s.id}">
-    <span class="ml-lib">${esc(s.nom)}${s.active ? ' <b>(active)</b>' : ''}</span>
-    <span class="ml-actions">
-      <button class="btn btn-mini" data-act="sa-toggle">${s.active ? 'Désactiver' : 'Activer'}</button>
-      <button class="btn btn-mini" data-act="sa-edit">Modifier</button>
-      <button class="btn btn-mini" data-act="sa-del">Supprimer</button>
-    </span></li>`;
+    <span class="ml-lib">${esc(s.nom)} ${etat}</span>
+    <span class="ml-actions">${actions}</span></li>`;
+}
+
+// Ligne récap du palmarès figé à la clôture.
+function palmaresLigne(p) {
+  if (!p) return '';
+  const bits = [];
+  if (p.champion) bits.push(`🏆 ${esc(p.champion)}`);
+  if (p.construit) bits.push(`⚔️ ${esc(p.construit)}`);
+  if (p.limite) bits.push(`🎲 ${esc(p.limite)}`);
+  return bits.length ? `<small>${bits.join(' · ')}</small>` : '';
+}
+
+// Calcule le snapshot des vainqueurs d'une saison au moment de la clôture.
+function calcPalmares(model, saisonId) {
+  const champ = classementCommander(model, saisonId).joueurs[0];
+  const ec = classementElo(model, 'construit', saisonId)[0];
+  const el = classementElo(model, 'limite', saisonId)[0];
+  return {
+    date: today(),
+    champion: champ && champ.entite ? champ.entite.nom : null,
+    construit: ec && ec.joueur ? ec.joueur.nom : null,
+    limite: el && el.joueur ? el.joueur.nom : null,
+  };
 }
 
 function gestionDecks(model) {
@@ -520,6 +685,14 @@ function actionGestion(btn, container, ctx, model) {
       if (n) return ctx.toast(`Impossible : saison utilisée dans ${n} soirée(s)/partie(s).`);
       if (!confirm('Supprimer cette saison ?')) return;
       store.removeSaison(id); ctx.toast('Saison supprimée.'); ctx.refresh(); break;
+    }
+    case 'sa-cloturer': {
+      if (!confirm('Clôturer cette saison ? Elle sera désactivée et son palmarès figé.')) return;
+      store.cloturerSaison(id, calcPalmares(model, id));
+      ctx.toast('Saison clôturée.'); ctx.refresh(); break;
+    }
+    case 'sa-rouvrir': {
+      store.rouvrirSaison(id); ctx.toast('Saison rouverte.'); ctx.refresh(); break;
     }
   }
 }

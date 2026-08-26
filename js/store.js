@@ -106,6 +106,27 @@ export function removeSaison(id) {
   toucher();
 }
 
+// Clôture une saison : la désactive, fixe la date de fin et fige un palmarès
+// (snapshot des vainqueurs au moment de la clôture).
+export function cloturerSaison(id, palmares) {
+  const s = model.saisons.find((x) => x.id === id);
+  if (!s) return;
+  s.active = false;
+  s.fin = today();
+  s.cloturee = true;
+  s.palmares = palmares || null;
+  toucher();
+}
+
+export function rouvrirSaison(id) {
+  const s = model.saisons.find((x) => x.id === id);
+  if (!s) return;
+  s.cloturee = false;
+  s.fin = null;
+  delete s.palmares;
+  toucher();
+}
+
 // Comptage des références (pour bloquer une suppression destructrice).
 export const refsJoueur = (id) =>
   model.decks.filter((d) => d.joueur_id === id).length
@@ -139,6 +160,16 @@ export function addPartie(o) {
 
 export function removePartie(id) {
   model.parties = model.parties.filter((p) => p.id !== id);
+  toucher();
+}
+
+// Modifie une partie existante (o.id requis) et réaligne sa saison sur la soirée.
+export function updatePartie(o) {
+  const p = model.parties.find((x) => x.id === o.id);
+  if (!p) return;
+  Object.assign(p, o);
+  const so = model.soirees.find((e) => e.id === p.soiree_id);
+  p.saison_id = so ? so.saison_id : p.saison_id;
   toucher();
 }
 
