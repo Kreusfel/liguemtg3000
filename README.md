@@ -93,7 +93,6 @@ jurande/
 
 ## Pistes suivantes
 
-- Suppression/édition des joueurs, decks, saisons depuis l'UI (v1 = ajout).
 - Profil joueur détaillé (courbe d'ELO, adversaire favori).
 - Stats de deck en Commander pour aider à équilibrer.
 - Génération de pods / pairings pour la soirée.
