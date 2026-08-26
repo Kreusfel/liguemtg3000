@@ -3,7 +3,7 @@
 // points (Joueur + Deck). Tout est recalculé à la volée depuis le log.
 
 import { getModel, saisons as listeSaisons } from '../store.js';
-import { classementElo, classementCommander, saisonActive } from '../ranking.js';
+import { classementElo, classementCommander, statsCouleurs, saisonActive } from '../ranking.js';
 import { esc, pct, r0 } from '../util.js';
 
 let saisonSel = null;      // mémorisé entre rendus
@@ -65,6 +65,10 @@ export function renderClassement(container, ctx) {
 
     <h2>Commander — Decks</h2>
     ${tableCmdDecks(cmd.decks)}
+
+    <h2>Commander — Couleurs</h2>
+    <p class="sub">Winrate par couleur de mana (chaque participation compte pour chaque couleur du deck joué).</p>
+    ${tableCouleurs(statsCouleurs(model, sid))}
   `;
 
   container.querySelector('#c-saison').onchange = (e) => { saisonSel = e.target.value; ctx.refresh(); };
@@ -132,19 +136,36 @@ function tableCmdJoueurs(lignes) {
 function tableCmdDecks(lignes) {
   const corps = lignes.length ? lignes.map((l, i) => {
     const d = l.entite;
+    const dots = d && d.couleurs ? d.couleurs.map((c) => `<span class="mana-dot mana-${c.toLowerCase()}"></span>`).join('') : '';
     return `<tr class="${i < 3 ? 'podium podium-' + (i + 1) : ''}">
       <td class="num rang">${medaille(i)}</td>
       <td class="desig">${esc(d ? d.nom : '?')}<small>${esc(d && d.commandant || '')}</small></td>
       <td>${esc(l.joueur ? l.joueur.nom : '—')}</td>
+      <td>${dots || '—'}</td>
       <td class="num pts">${l.points}</td>
       <td class="num">${l.parties}</td>
       <td class="num">${l.victoires}</td>
       <td class="num">${pct(l.winrate)}</td>
     </tr>`;
   }).join('')
-    : `<tr><td colspan="7" class="empty">Aucun pod enregistré.</td></tr>`;
+    : `<tr><td colspan="8" class="empty">Aucun pod enregistré.</td></tr>`;
   return `<div class="tablewrap"><table>
-    <thead><tr><th>#</th><th>Deck</th><th>Joueur</th><th class="num">Points</th><th class="num">Parties</th><th class="num">Victoires</th><th class="num">Winrate</th></tr></thead>
+    <thead><tr><th>#</th><th>Deck</th><th>Joueur</th><th>Couleurs</th><th class="num">Points</th><th class="num">Parties</th><th class="num">Victoires</th><th class="num">Winrate</th></tr></thead>
+    <tbody>${corps}</tbody>
+  </table></div>`;
+}
+
+function tableCouleurs(lignes) {
+  const noms = { W: 'Blanc', U: 'Bleu', B: 'Noir', R: 'Rouge', G: 'Vert' };
+  const corps = lignes.length ? lignes.map((l) => `<tr>
+      <td class="desig"><span class="mana-dot mana-${l.couleur.toLowerCase()}"></span> ${noms[l.couleur]}</td>
+      <td class="num">${l.parties}</td>
+      <td class="num">${l.victoires}</td>
+      <td class="num">${pct(l.winrate)}</td>
+    </tr>`).join('')
+    : `<tr><td colspan="4" class="empty">Aucun pod enregistré.</td></tr>`;
+  return `<div class="tablewrap"><table>
+    <thead><tr><th>Couleur</th><th class="num">Parties</th><th class="num">Victoires</th><th class="num">Winrate</th></tr></thead>
     <tbody>${corps}</tbody>
   </table></div>`;
 }

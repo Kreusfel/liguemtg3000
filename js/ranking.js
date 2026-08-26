@@ -165,6 +165,30 @@ export function classementCommander(model, saisonId = null) {
   return { joueurs: fin(parJoueur, false), decks: fin(parDeck, true) };
 }
 
+// Stats Commander agrégées par couleur de mana : chaque participation de pod
+// compte pour chaque couleur du deck joué (parties + victoires si place 1).
+export function statsCouleurs(model, saisonId = null) {
+  const idx = index(model);
+  const acc = {};
+  const bump = (c, win) => {
+    const e = acc[c] || (acc[c] = { couleur: c, parties: 0, victoires: 0 });
+    e.parties++; if (win) e.victoires++;
+  };
+  const pods = model.parties.filter((p) => p.type === 'pod' && (!saisonId || p.saison_id === saisonId));
+  for (const p of pods) {
+    for (const part of p.participants) {
+      const d = idx.d[part.deck_id];
+      if (!d || !d.couleurs || !d.couleurs.length) continue;
+      const win = part.place === 1;
+      for (const c of d.couleurs) bump(c, win);
+    }
+  }
+  return ['W', 'U', 'B', 'R', 'G']
+    .filter((c) => acc[c])
+    .map((c) => ({ ...acc[c], winrate: acc[c].parties ? acc[c].victoires / acc[c].parties : 0 }))
+    .sort((a, b) => b.winrate - a.winrate || b.parties - a.parties);
+}
+
 // Saison active (ou la plus récente), pratique pour les vues.
 export function saisonActive(model) {
   return model.saisons.find((s) => s.active)
