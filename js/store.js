@@ -91,6 +91,31 @@ export function upsertSaison(o) {
   toucher(); return o.id;
 }
 
+// Suppressions. Les vues vérifient l'absence de références avant d'appeler
+// (un joueur/deck/saison encore utilisé dans une partie n'est pas supprimable).
+export function removeJoueur(id) {
+  model.joueurs = model.joueurs.filter((j) => j.id !== id);
+  toucher();
+}
+export function removeDeck(id) {
+  model.decks = model.decks.filter((d) => d.id !== id);
+  toucher();
+}
+export function removeSaison(id) {
+  model.saisons = model.saisons.filter((s) => s.id !== id);
+  toucher();
+}
+
+// Comptage des références (pour bloquer une suppression destructrice).
+export const refsJoueur = (id) =>
+  model.decks.filter((d) => d.joueur_id === id).length
+  + model.parties.filter((p) => p.participants.some((x) => x.joueur_id === id)).length;
+export const refsDeck = (id) =>
+  model.parties.filter((p) => p.participants.some((x) => x.deck_id === id)).length;
+export const refsSaison = (id) =>
+  model.soirees.filter((e) => e.saison_id === id).length
+  + model.parties.filter((p) => p.saison_id === id).length;
+
 export function addSoiree(o) {
   o.id = genId('e'); o.date = o.date || today();
   model.soirees.push(o); toucher(); return o.id;

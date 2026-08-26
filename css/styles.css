@@ -14,6 +14,10 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
+/* Scrollbar toujours réservée : évite que la largeur du contenu (et donc le
+   bandeau + header pleine largeur) saute quand on passe sur un onglet long
+   comme Saisie, où la barre de défilement verticale apparaît. */
+html{overflow-y:scroll}
 body{
   background:var(--bg);
   background-image:radial-gradient(1200px 400px at 100% -5%, #efe6ff 0, transparent 60%),
@@ -24,10 +28,12 @@ body{
 .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
 
 /* ---------- bandeau mana + header ---------- */
-.mana-strip{height:10px;display:flex}
-.mana-strip i{flex:1}
-.mana-strip .w{background:var(--w)}.mana-strip .u{background:var(--u)}
-.mana-strip .b{background:var(--b)}.mana-strip .r{background:var(--r)}.mana-strip .g{background:var(--g)}
+/* Dégradé à paliers nets plutôt que 5 enfants flex : rendu pixel-perfect à
+   n'importe quel zoom / mise à l'échelle Windows (125 %…), sans gaps subpixel
+   ni décalage des segments. */
+.mana-strip{height:10px;width:100%;
+  background:linear-gradient(90deg,
+    var(--w) 0 20%, var(--u) 20% 40%, var(--b) 40% 60%, var(--r) 60% 80%, var(--g) 80% 100%)}
 header.top{
   background:linear-gradient(120deg,#3a2560 0%,#5b32a8 60%,#7a4bd0 100%);
   color:#fff;padding:18px 24px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
@@ -125,6 +131,15 @@ tr.podium-3{background:#fdf3e9 !important}
 .deck-pill small{display:block;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:400}
 
 /* ---------- formulaires / saisie ---------- */
+/* Sous-onglets de saisie : un seul type de partie affiché à la fois. */
+.saisie-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.saisie-tabs button{font-family:'Fredoka',sans-serif;font-size:14px;font-weight:600;background:var(--panel);
+  border:2px solid var(--line2);border-radius:var(--rp);padding:8px 16px;cursor:pointer;color:var(--ink);
+  transition:transform .08s,background .15s,color .15s}
+.saisie-tabs button:hover{transform:translateY(-2px)}
+.saisie-tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;
+  box-shadow:0 4px 12px rgba(122,75,208,.3)}
+.saisie-tabs button:focus-visible{outline:3px solid var(--accent2);outline-offset:2px}
 .form-card{background:var(--panel);border-radius:var(--rc);box-shadow:var(--shadow);padding:20px;margin-bottom:20px}
 .form-card h2{margin-top:0}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
@@ -139,8 +154,14 @@ input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid 
 .ajout-inline .chk{display:flex;align-items:center;gap:6px;white-space:nowrap;text-transform:none;letter-spacing:0;color:var(--ink);margin:0;width:auto;font-weight:700}
 .ajout-inline .chk input{width:auto}
 .mini-list{list-style:none;padding:0;margin:14px 0 0;font-size:13.5px}
-.mini-list li{padding:7px 0;border-bottom:1px solid var(--line)}
+.mini-list li{padding:7px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;
+  gap:10px;justify-content:space-between;flex-wrap:wrap}
 .mini-list li:last-child{border-bottom:none}
+.mini-list li.editing{display:block}
+.mini-list .ml-lib{min-width:0;flex:1}
+.mini-list .ml-lib small{display:inline}
+.mini-list .ml-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap}
+.mini-list li .ml-lib small{color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px}
 .mini-list small{color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px}
 
 .chk-joueurs{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
