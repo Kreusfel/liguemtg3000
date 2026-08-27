@@ -1,6 +1,7 @@
 // main.js — orchestrateur : chargement du log, navigation, contexte partagé.
 
 import { load, isDirty } from './store.js';
+import { prime as primeScryfall } from './scryfall.js';
 import { renderClassement } from './views/classement.js';
 import { renderHistorique } from './views/historique.js';
 import { renderJoueurs } from './views/joueurs.js';
@@ -64,7 +65,9 @@ function majBadge() {
   el('badge-saisie').textContent = isDirty() ? '●' : '';
 }
 
-load()
+// Le préchargement Scryfall (cache embarqué) tourne en parallèle du log ;
+// prime() avale ses propres erreurs, il ne peut pas faire échouer le démarrage.
+Promise.all([load(), primeScryfall()])
   .then(startUI)
   .catch((e) => { console.error(e); toast('Erreur de chargement : ' + e.message); });
 

@@ -8,9 +8,10 @@
 //
 // Bump CACHE quand tu veux forcer la purge de l'ancien cache.
 
-const CACHE = 'jurande-v13';
+const CACHE = 'jurande-v15';
 const ASSETS = [
   '.', 'index.html', 'manifest.webmanifest',
+  'data/scryfall.json',
   'css/styles.css',
   'js/main.js', 'js/store.js', 'js/github.js', 'js/ranking.js', 'js/util.js', 'js/scryfall.js',
   'js/views/shared.js',

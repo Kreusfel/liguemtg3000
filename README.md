@@ -79,18 +79,55 @@ sinon, l'app reste utilisable (édition en brouillon local, non publiée).
 jurande/
 ├── index.html            # coquille + navigation
 ├── manifest.webmanifest / sw.js
-├── data/ligue.json       # le log (source de vérité, versionnée)
+├── data/
+│   ├── ligue.json        # le log (source de vérité, versionnée)
+│   ├── scryfall.json     # cache commandants (illustration + nom FR), généré hors-ligne
+│   └── cards/            # illustrations téléchargées (embarquées dans le dépôt)
 ├── css/styles.css        # thème « guilde » + accents mana WUBRG
 ├── icons/icon.svg
+├── tools/
+│   └── scryfall-fetch.py # pré-résout les commandants via Scryfall (à lancer hors proxy)
 └── js/
     ├── main.js           # navigation, contexte
     ├── store.js          # état, brouillon local, mutations
     ├── github.js         # publication via API GitHub (token, Contents API)
     ├── ranking.js        # ELO ×2 + points Commander (joueur/deck)
+    ├── scryfall.js       # cache embarqué des commandants (+ repli live)
     ├── util.js           # helpers + sparkline SVG
     └── views/            # shared (briques communes) + classement, historique,
                           #   joueurs, decks, rivalites, saisie, reglages
 ```
+
+## Illustrations + noms FR des commandants (Scryfall, hors-ligne)
+
+La page **Decks** affiche l'illustration de chaque commandant et son nom
+français. Ces données viennent de [Scryfall](https://scryfall.com), mais l'app
+**n'appelle jamais l'API à l'exécution** : sur un réseau filtré (proxy) les
+appels vers `api.scryfall.com` / `cards.scryfall.io` sont bloqués. À la place,
+tout est **pré-résolu et embarqué dans le dépôt** :
+
+- `data/scryfall.json` — table `commandant → { img, card, fr, en, uri }`.
+- `data/cards/*.jpg` — les visuels, servis en **même origine** (donc non bloqués
+  par le proxy) : `<slug>.jpg` = illustration du bandeau, `<slug>-full.jpg` =
+  carte entière (version FR si elle existe).
+
+Le navigateur charge ce cache local au démarrage (`js/scryfall.js` → `prime()`).
+L'API en direct ne sert plus que de **repli** pour un commandant absent du
+fichier, et uniquement depuis un réseau libre.
+
+### Mettre à jour le cache (après ajout / modif de decks)
+
+Depuis un réseau **avec accès libre à Scryfall** (chez soi, partage 4G — pas
+derrière le proxy) :
+
+```bash
+python tools/scryfall-fetch.py          # ne résout que les commandants manquants
+python tools/scryfall-fetch.py --force  # refait tout (ré-télécharge les images)
+```
+
+Le script lit `data/ligue.json`, résout chaque commandant, télécharge les
+illustrations dans `data/cards/` et écrit `data/scryfall.json`. Il ne reste plus
+qu'à **commiter** `data/scryfall.json` + `data/cards/` (aucune dépendance : Python 3 stdlib).
 
 ## Où se fait quoi
 
