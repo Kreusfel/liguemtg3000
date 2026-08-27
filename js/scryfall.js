@@ -1,9 +1,14 @@
-// scryfall.js — résolution des commandants via l'API Scryfall (illustration +
-// nom français). Résultats mis en cache dans localStorage : on n'interroge
-// Scryfall qu'une fois par commandant, et l'app reste utilisable hors-ligne.
+// scryfall.js — illustrations + noms français des commandants.
 //
-// API publique, CORS ouvert. On reste poli : requêtes en série avec un petit
-// délai, et tout est mémorisé (y compris les « non trouvés »).
+// Source NORMALE : le cache embarqué `data/scryfall.json` (+ images dans
+// `data/cards/`), généré HORS-LIGNE par tools/scryfall-fetch.py et versionné.
+// C'est un chemin MÊME ORIGINE : il n'est donc jamais bloqué par le proxy
+// SEMINOR, contrairement à un appel direct à api.scryfall.com. `prime()` le
+// charge une fois au démarrage.
+//
+// Repli : l'API Scryfall en direct ne sert plus que pour un commandant absent
+// du fichier (deck ajouté depuis un réseau libre). Derrière le proxy ce repli
+// échoue silencieusement — d'où l'intérêt de relancer le script + commiter.
 
 const LS = 'jurande_scryfall';
 let cache = charger();
@@ -23,6 +28,25 @@ function cle(nom) {
 export function getCached(nom) {
   const k = cle(nom);
   return k ? (cache[k] || null) : null;
+}
+
+// Précharge (une seule fois) le cache embarqué data/scryfall.json. Le fichier
+// fait foi : il écrase d'éventuelles entrées « live » restées en localStorage
+// (URLs distantes bloquées au bureau) par des chemins d'images locaux.
+let primed = null;
+export function prime() {
+  if (!primed) {
+    primed = (async () => {
+      try {
+        const r = await fetch(`data/scryfall.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (!r.ok) return;
+        const data = await r.json();
+        for (const [k, v] of Object.entries(data)) cache[k] = v;
+        sauver();
+      } catch { /* pas de fichier : on tombera sur le repli live si dispo */ }
+    })();
+  }
+  return primed;
 }
 
 // Choisit une image utilisable (gère les cartes recto-verso).
@@ -67,13 +91,15 @@ export async function resolve(nom) {
   return cache[k];
 }
 
-// Résout en série une liste de noms non encore en cache (poli avec l'API).
-// `onResolved(nom, entry)` est appelé après chaque résolution.
+// Peint une liste de commandants. On charge d'abord le cache embarqué, puis on
+// applique chaque entrée (illustration + nom FR) via `onResolved(nom, entry)`.
+// Un commandant absent du fichier déclenche un repli live (réseau libre requis).
 export async function resoudreManquants(noms, onResolved) {
-  const uniques = [...new Set(noms.map(cle).filter(Boolean))].filter((k) => !cache[k]);
-  for (const k of uniques) {
-    const e = await resolve(k);
+  await prime();
+  const cles = [...new Set(noms.map(cle).filter(Boolean))];
+  for (const k of cles) {
+    let e = cache[k];
+    if (!e) { e = await resolve(k); await pause(120); }   // repli live, poli
     if (onResolved) onResolved(k, e);
-    await pause(120);
   }
 }
