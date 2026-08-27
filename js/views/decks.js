@@ -47,9 +47,9 @@ function appliquerScryfall(card, e) {
     if (h) { h.classList.add('has-art'); h.style.backgroundImage = artFond(e.img); }
   }
   if (e.card) {
-    const box = card.querySelector('.jc-decks');
+    const box = card.querySelector('.deck-cardcol');
     if (box && !box.querySelector('.deck-fullcard')) {
-      box.insertAdjacentHTML('afterbegin', fullCardHtml(e.card, card.dataset.cmd, e.uri));
+      box.insertAdjacentHTML('beforeend', fullCardHtml(e.card, card.dataset.cmd, e.uri));
     }
   }
   if (e.fr) {
@@ -127,14 +127,16 @@ function carteDeck(d, model, s, plays, jn) {
 
   return `<div class="joueur-card deck-card" data-cmd="${esc(d.commandant || '')}"${style}>
     <div class="jc-head deck-head${art ? ' has-art' : ''}"${headStyle}><b>${esc(d.nom)}</b>${emprunteurs.length ? ' <span class="jc-pret" title="deck prêté">🤝</span>' : ''}</div>
-    <div class="jc-stats">
-      <div class="jc-stat"><span>Propriétaire</span><b style="font-size:15px">${esc(jn[d.joueur_id] || '?')}</b></div>
-      <div class="jc-stat"><span>Parties</span><b>${plays[d.id] || 0}</b></div>
-      <div class="jc-stat"><span>Victoires</span><b>${s ? s.victoires : 0}</b></div>
-      <div class="jc-stat"><span>Winrate</span><b>${s ? pct(s.winrate) : '—'}</b></div>
+    <div class="deck-main">
+      <div class="jc-stats">
+        <div class="jc-stat"><span>Propriétaire</span><b style="font-size:15px">${esc(jn[d.joueur_id] || '?')}</b></div>
+        <div class="jc-stat"><span>Parties</span><b>${plays[d.id] || 0}</b></div>
+        <div class="jc-stat"><span>Victoires</span><b>${s ? s.victoires : 0}</b></div>
+        <div class="jc-stat"><span>Winrate</span><b>${s ? pct(s.winrate) : '—'}</b></div>
+      </div>
+      <div class="deck-cardcol">${carteImg ? fullCardHtml(carteImg, d.commandant, sc.uri) : ''}</div>
     </div>
     <div class="jc-decks">
-      ${carteImg ? fullCardHtml(carteImg, d.commandant, sc.uri) : ''}
       ${d.commandant ? `<div class="deck-commandant">${esc(d.commandant)}${frTag}</div>` : ''}
       <div class="deck-jouepar"><span class="jp-lib">Joué par</span>${joueParHtml}</div>
     </div>
