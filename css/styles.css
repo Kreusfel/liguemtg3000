@@ -191,6 +191,16 @@ table.matrix .h2h-vide{color:var(--line2)}
 .deck-head.has-art{min-height:112px;background-size:cover;background-position:center;
   display:flex;align-items:flex-end;text-shadow:0 1px 4px rgba(0,0,0,.75)}
 .cmd-fr{color:var(--accent2);font-weight:700;font-family:'Nunito',sans-serif}
+/* autocomplétion commandant (Scryfall) */
+.ac-host{position:relative}
+.deck-edit{overflow:visible}   /* la liste ne doit pas être coupée en édition */
+.ac-list{position:absolute;z-index:40;left:0;right:0;top:calc(100% + 3px);margin:0;padding:4px;
+  list-style:none;background:#fff;border:2px solid var(--line2);border-radius:12px;
+  box-shadow:0 12px 28px rgba(42,33,64,.20);max-height:264px;overflow:auto}
+.ac-item{padding:8px 10px;border-radius:8px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ac-item.on,.ac-item:hover{background:var(--accent);color:#fff}
+
 /* ligne principale : stats à gauche (colonne unique), carte du commandant à droite */
 .deck-main{display:flex;align-items:stretch}
 .deck-card .jc-stats{flex:1 1 auto;grid-template-columns:1fr}
