@@ -168,19 +168,6 @@
       "actif": true
     },
     {
-      "joueur_id": "j1",
-      "nom": "Edgar Tribal Vampire",
-      "commandant": "Edgar Markov",
-      "couleurs": [
-        "W",
-        "B",
-        "R"
-      ],
-      "format": "commander",
-      "id": "d81211834",
-      "actif": true
-    },
-    {
       "joueur_id": "j26325323",
       "nom": "Edgar Tribal Vampire",
       "commandant": "Edgar Markov",
@@ -191,19 +178,6 @@
       ],
       "format": "commander",
       "id": "d08210445",
-      "actif": true
-    },
-    {
-      "joueur_id": "j1",
-      "nom": "Choco Poulet",
-      "commandant": "Choco, Seeker of Paradise",
-      "couleurs": [
-        "W",
-        "U",
-        "G"
-      ],
-      "format": "commander",
-      "id": "d50489455",
       "actif": true
     },
     {
@@ -246,7 +220,7 @@
       "participants": [
         {
           "joueur_id": "j1",
-          "deck_id": "d81211834",
+          "deck_id": "d08210445",
           "place": 3
         },
         {
@@ -270,7 +244,7 @@
       "participants": [
         {
           "joueur_id": "j1",
-          "deck_id": "d50489455",
+          "deck_id": "d33580144",
           "place": 3
         },
         {
