@@ -53,12 +53,20 @@ def http_bytes(url):
         return r.read()
 
 
+def _uris(card):
+    return card.get('image_uris') or (card.get('card_faces') or [{}])[0].get('image_uris') or {}
+
+
 def image_de(card):
-    # Illustration recadree (art_crop) — gere les cartes recto-verso.
-    u = card.get('image_uris') or (card.get('card_faces') or [{}])[0].get('image_uris')
-    if not u:
-        return None
+    # Illustration recadree (art_crop), pour le bandeau — recto-verso gere.
+    u = _uris(card)
     return u.get('art_crop') or u.get('normal') or u.get('small')
+
+
+def full_de(card):
+    # Carte entiere (format portrait).
+    u = _uris(card)
+    return u.get('normal') or u.get('large') or u.get('small')
 
 
 def main():
@@ -78,7 +86,8 @@ def main():
 
     for nom in noms:
         k = cle(nom)
-        if not FORCE and out.get(k, {}).get('img'):
+        prev = out.get(k, {})
+        if not FORCE and (prev.get('card') or prev.get('notFound')):
             print('.', nom, '(deja en cache)')
             continue
         print('->', nom, '...', end=' ', flush=True)
@@ -91,26 +100,39 @@ def main():
                 time.sleep(0.12)
                 continue
 
-            img_url = image_de(en)
             time.sleep(0.12)   # poli avec l'API
 
             # Nom francais : correspondance de nom exacte filtree sur la langue FR.
-            fr = None
+            fr, fr_card = None, None
             q = '!"%s" lang:fr' % en['name']
             rf = http_json('https://api.scryfall.com/cards/search?unique=prints&q='
                            + urllib.parse.quote(q))
             if rf and rf.get('data'):
-                fr = rf['data'][0].get('printed_name')
+                fr_card = rf['data'][0]
+                fr = fr_card.get('printed_name')
 
+            base = slug(en['name'])
+            # Bandeau : illustration recadree (langue indifferente).
             img_rel = None
+            img_url = image_de(en)
             if img_url:
-                fname = slug(en['name']) + '.jpg'
-                with open(os.path.join(CARDS_DIR, fname), 'wb') as f:
+                with open(os.path.join(CARDS_DIR, base + '.jpg'), 'wb') as f:
                     f.write(http_bytes(img_url))
-                img_rel = 'data/cards/' + fname
+                img_rel = 'data/cards/' + base + '.jpg'
+
+            # Carte entiere : version FR si elle existe, sinon EN.
+            card_rel = None
+            full_url = full_de(fr_card) if fr_card else None
+            if not full_url:
+                full_url = full_de(en)
+            if full_url:
+                with open(os.path.join(CARDS_DIR, base + '-full.jpg'), 'wb') as f:
+                    f.write(http_bytes(full_url))
+                card_rel = 'data/cards/' + base + '-full.jpg'
 
             out[k] = {
                 'img': img_rel,
+                'card': card_rel,
                 'en': en['name'],
                 'fr': fr,
                 'uri': en.get('scryfall_uri'),

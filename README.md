@@ -106,9 +106,10 @@ français. Ces données viennent de [Scryfall](https://scryfall.com), mais l'app
 appels vers `api.scryfall.com` / `cards.scryfall.io` sont bloqués. À la place,
 tout est **pré-résolu et embarqué dans le dépôt** :
 
-- `data/scryfall.json` — table `commandant → { img, fr, en, uri }`.
-- `data/cards/*.jpg` — les illustrations, servies en **même origine** (donc non
-  bloquées par le proxy).
+- `data/scryfall.json` — table `commandant → { img, card, fr, en, uri }`.
+- `data/cards/*.jpg` — les visuels, servis en **même origine** (donc non bloqués
+  par le proxy) : `<slug>.jpg` = illustration du bandeau, `<slug>-full.jpg` =
+  carte entière (version FR si elle existe).
 
 Le navigateur charge ce cache local au démarrage (`js/scryfall.js` → `prime()`).
 L'API en direct ne sert plus que de **repli** pour un commandant absent du

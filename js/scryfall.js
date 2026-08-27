@@ -49,11 +49,12 @@ export function prime() {
   return primed;
 }
 
-// Choisit une image utilisable (gère les cartes recto-verso).
-function imageDe(card) {
-  const u = card.image_uris || (card.card_faces && card.card_faces[0] && card.card_faces[0].image_uris);
-  return u ? (u.art_crop || u.normal || u.small || null) : null;
+// Images d'une carte (gère les cartes recto-verso).
+function urisDe(card) {
+  return card.image_uris || (card.card_faces && card.card_faces[0] && card.card_faces[0].image_uris) || {};
 }
+const imageDe = (card) => { const u = urisDe(card); return u.art_crop || u.normal || u.small || null; };  // bandeau
+const fullDe = (card) => { const u = urisDe(card); return u.normal || u.large || u.small || null; };        // carte entière
 
 async function jget(url) {
   const r = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -71,6 +72,7 @@ export async function resolve(nom) {
     const en = await jget('https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(nom));
     if (!en) { cache[k] = { notFound: true }; sauver(); return cache[k]; }
     let img = imageDe(en);
+    let card = null;
     let fr = null;
     // Cherche la version française (nom imprimé + éventuellement l'illustration FR).
     // Correspondance de nom exact (!"…") filtrée sur la langue française.
@@ -82,8 +84,10 @@ export async function resolve(nom) {
       fr = cfr.printed_name || null;
       const imgFr = imageDe(cfr);
       if (imgFr) img = imgFr;   // privilégie l'illustration de la carte FR
+      card = fullDe(cfr);       // carte entière en FR si dispo
     }
-    cache[k] = { img, en: en.name, fr, uri: en.scryfall_uri || null };
+    if (!card) card = fullDe(en);
+    cache[k] = { img, card, en: en.name, fr, uri: en.scryfall_uri || null };
   } catch {
     cache[k] = { notFound: true };
   }

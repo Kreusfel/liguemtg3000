@@ -46,6 +46,12 @@ function appliquerScryfall(card, e) {
     const h = card.querySelector('.deck-head');
     if (h) { h.classList.add('has-art'); h.style.backgroundImage = artFond(e.img); }
   }
+  if (e.card) {
+    const box = card.querySelector('.jc-decks');
+    if (box && !box.querySelector('.deck-fullcard')) {
+      box.insertAdjacentHTML('afterbegin', fullCardHtml(e.card, card.dataset.cmd, e.uri));
+    }
+  }
   if (e.fr) {
     const c = card.querySelector('.deck-commandant');
     const stored = String(card.dataset.cmd || '');
@@ -57,6 +63,14 @@ function appliquerScryfall(card, e) {
 
 function artFond(img) {
   return `linear-gradient(to top, rgba(20,10,30,.78), rgba(20,10,30,.15)), url('${img}')`;
+}
+
+// Visuel de la carte entière (portrait), cliquable vers la fiche Scryfall.
+function fullCardHtml(src, nom, uri) {
+  const img = `<img class="deck-fullcard" src="${esc(src)}" alt="${esc(nom || '')}" loading="lazy">`;
+  return `<div class="deck-fullcard-wrap">${uri
+    ? `<a href="${esc(uri)}" target="_blank" rel="noopener" title="Voir sur Scryfall">${img}</a>`
+    : img}</div>`;
 }
 
 function formAjout(model) {
@@ -101,9 +115,11 @@ function carteDeck(d, model, s, plays, jn) {
         <small>${u.parties} partie${u.parties > 1 ? 's' : ''} · ${u.victoires} V</small></div>`).join('')
     : '<span class="empty">jamais joué</span>';
 
-  // Illustration + nom FR depuis le cache Scryfall (le reste est chargé ensuite).
+  // Illustration + carte entière + nom FR depuis le cache Scryfall (le reste
+  // est chargé ensuite si absent).
   const sc = getCached(d.commandant);
   const art = sc && sc.img ? sc.img : null;
+  const carteImg = sc && sc.card ? sc.card : null;
   const fr = sc && sc.fr ? sc.fr : null;
   const headStyle = art ? ` style="background-image:${artFond(art)}"` : '';
   const frTag = fr && fr.toLowerCase() !== String(d.commandant || '').toLowerCase()
@@ -118,6 +134,7 @@ function carteDeck(d, model, s, plays, jn) {
       <div class="jc-stat"><span>Winrate</span><b>${s ? pct(s.winrate) : '—'}</b></div>
     </div>
     <div class="jc-decks">
+      ${carteImg ? fullCardHtml(carteImg, d.commandant, sc.uri) : ''}
       ${d.commandant ? `<div class="deck-commandant">${esc(d.commandant)}${frTag}</div>` : ''}
       <div class="deck-jouepar"><span class="jp-lib">Joué par</span>${joueParHtml}</div>
     </div>
