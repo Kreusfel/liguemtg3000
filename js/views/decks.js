@@ -6,7 +6,7 @@ import { getModel, upsertDeck, removeDeck, refsDeck } from '../store.js';
 import { classementCommander } from '../ranking.js';
 import { esc, pct } from '../util.js';
 import { optJoueurs, optJoueursSel, parseCouleurs, deckPlays, manaGradient } from './shared.js';
-import { getCached, resoudreManquants } from '../scryfall.js';
+import { getCached, resoudreManquants, suggest } from '../scryfall.js';
 
 let editDeck = null;   // id du deck en cours d'édition (null = aucun)
 
@@ -92,7 +92,7 @@ function carteDeck(d, model, s, plays, jn) {
     : '';
 
   if (editDeck === d.id) {
-    return `<div class="joueur-card"${style}>
+    return `<div class="joueur-card deck-edit"${style}>
       <div class="jc-head"><b>Modifier le deck</b></div>
       <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px" data-id="${d.id}">
         <div><label>Propriétaire</label><select class="e-joueur">${optJoueursSel(model, d.joueur_id)}</select></div>
@@ -161,7 +161,64 @@ function usageDeck(model, deckId) {
   return u;
 }
 
+// Autocomplétion Scryfall sur un champ « commandant ». Dégradation propre : si
+// suggest() ne renvoie rien (Scryfall injoignable), aucune liste n'apparaît et
+// le champ reste un input texte normal — la saisie manuelle n'est jamais bloquée.
+function attachAutocomplete(input) {
+  if (!input || input._ac) return;
+  input._ac = true;
+  input.setAttribute('autocomplete', 'off');
+  const host = input.parentElement;
+  host.classList.add('ac-host');
+  const list = document.createElement('ul');
+  list.className = 'ac-list';
+  list.hidden = true;
+  host.appendChild(list);
+
+  let items = [], active = -1, seq = 0, timer = null;
+
+  const close = () => { list.hidden = true; list.innerHTML = ''; items = []; active = -1; };
+  const paint = () => {
+    list.innerHTML = items.map((it, i) =>
+      `<li class="ac-item${i === active ? ' on' : ''}" data-i="${i}">${esc(it.label)}</li>`).join('');
+    list.hidden = !items.length;
+  };
+  const choose = (i) => {
+    if (i < 0 || i >= items.length) return;
+    input.value = items[i].value;
+    close();
+  };
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim();
+    clearTimeout(timer);
+    if (q.length < 2) return close();
+    const my = ++seq;
+    timer = setTimeout(async () => {
+      const res = await suggest(q);
+      if (my !== seq) return;        // réponse obsolète (frappe plus récente)
+      items = res; active = -1; paint();
+    }, 220);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (list.hidden || !items.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); active = (active + 1) % items.length; paint(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); active = (active - 1 + items.length) % items.length; paint(); }
+    else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); choose(active); }
+    else if (e.key === 'Escape') { close(); }
+  });
+  // mousedown (avant blur) pour que le clic sélectionne avant la fermeture.
+  list.addEventListener('mousedown', (e) => {
+    const li = e.target.closest('.ac-item');
+    if (li) { e.preventDefault(); choose(+li.dataset.i); }
+  });
+  input.addEventListener('blur', () => setTimeout(close, 120));
+}
+
 function wire(container, ctx, model) {
+  attachAutocomplete(container.querySelector('#de-cmd'));
+  attachAutocomplete(container.querySelector('.e-cmd'));   // présent seulement en édition
+
   const add = () => {
     const joueur_id = container.querySelector('#de-joueur').value;
     const nom = container.querySelector('#de-nom').value.trim();
