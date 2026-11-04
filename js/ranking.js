@@ -9,6 +9,13 @@
 export const ELO_DEBUT = 1000;   // rating de départ
 export const ELO_K = 24;         // facteur K (amplitude d'ajustement)
 
+// Part du ratio de manches dans le score de performance ELO (le reste = résultat
+// du match / BO). 0 = seul le vainqueur compte (ancien comportement) ; 0.5 =
+// moitié-moitié. À 0.3, gagner le BO reste dominant mais les manches modulent :
+// gagner 2-0 rapporte plus que 2-1, et perdre 2-1 coûte moins que perdre 2-0 —
+// tout en gardant « gagner le BO > perdre le BO » quel que soit le score.
+export const ELO_PART_MANCHES = 0.3;
+
 export const PTS_VICTOIRE = 3;   // points d'une victoire de pod
 export const PTS_PARTICIPATION = 1;
 
@@ -31,6 +38,21 @@ function esperance(a, b) {
   return 1 / (1 + Math.pow(10, (b - a) / 400));
 }
 
+// Score de performance de A dans [0,1] pour l'ELO. Si le match porte un score de
+// manches (Limité : 2-1, 1-0…), on mêle le résultat du BO (dominant) et le ratio
+// de manches gagnées ; sinon (Construit, ou pas de manche jouée) on retombe sur
+// le résultat sec V/N/D. sa + sb = 1 par construction (jeu à somme nulle).
+function perfA(p) {
+  const [A, B] = p.participants;
+  const outcome = A.resultat === 'V' ? 1 : A.resultat === 'N' ? 0.5 : 0;
+  const ga = A.score, gb = B.score;
+  if (ga == null || gb == null) return outcome;           // pas de score : résultat sec
+  const tot = ga + gb;
+  if (tot <= 0) return outcome;                            // 0-0 : aucune manche
+  const ratio = ga / tot;
+  return (1 - ELO_PART_MANCHES) * outcome + ELO_PART_MANCHES * ratio;
+}
+
 // Classement ELO d'une catégorie ('construit' | 'limite'), pour une saison
 // (saisonId null = toutes saisons confondues).
 export function classementElo(model, categorie, saisonId = null) {
@@ -51,15 +73,16 @@ export function classementElo(model, categorie, saisonId = null) {
 
   for (const { p } of parties) {
     const [A, B] = p.participants;
-    const sa = A.resultat === 'V' ? 1 : A.resultat === 'N' ? 0.5 : 0;
+    const sa = perfA(p);
     const sb = 1 - sa;
     const ra = get(A.joueur_id), rb = get(B.joueur_id);
     rating[A.joueur_id] = ra + ELO_K * (sa - esperance(ra, rb));
     rating[B.joueur_id] = rb + ELO_K * (sb - esperance(rb, ra));
-    for (const [part, sc] of [[A, sa], [B, sb]]) {
+    // Les compteurs V/N/D reflètent le résultat du match (le BO), pas le score mêlé.
+    for (const part of p.participants) {
       const s = st(part.joueur_id);
       s.parties++;
-      if (sc === 1) s.v++; else if (sc === 0.5) s.n++; else s.d++;
+      if (part.resultat === 'V') s.v++; else if (part.resultat === 'N') s.n++; else s.d++;
     }
   }
 
@@ -94,7 +117,7 @@ export function eloTimeline(model, categorie, saisonId = null) {
 
   for (const { p } of parties) {
     const [A, B] = p.participants;
-    const sa = A.resultat === 'V' ? 1 : A.resultat === 'N' ? 0.5 : 0;
+    const sa = perfA(p);
     const sb = 1 - sa;
     const ra = get(A.joueur_id), rb = get(B.joueur_id);
     rating[A.joueur_id] = ra + ELO_K * (sa - esperance(ra, rb));

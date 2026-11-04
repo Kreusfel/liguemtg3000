@@ -55,8 +55,13 @@ sinon, l'app reste utilisable (édition en brouillon local, non publiée).
   "soirees":  [{ "id", "saison_id", "date", "lieu", "notes" }],
   "parties": [
     // 1v1 : alimente l'ELO de sa catégorie
+    // `score` (optionnel) = score du match, saisi en Limité (ex. 2 / 1) ; le
+    // `resultat` V|D|N en est déduit (score égal = nul). Quand il est présent,
+    // l'ELO mêle le résultat du BO (dominant) et le ratio de manches. `note`
+    // (optionnel, Limité) = couleurs/archétype joué (texte libre) ; en Limité il
+    // n'y a pas de deck (`deck_id` = null).
     { "type":"1v1", "categorie":"construit|limite", "format",
-      "participants":[{ "joueur_id", "deck_id", "resultat":"V|D|N" }] },
+      "participants":[{ "joueur_id", "deck_id", "resultat":"V|D|N", "score", "note" }] },
     // pod : alimente le classement Commander (joueur + deck)
     { "type":"pod", "format":"commander",
       "participants":[{ "joueur_id", "deck_id", "place" }] }
@@ -68,7 +73,11 @@ sinon, l'app reste utilisable (édition en brouillon local, non publiée).
 
 - **ELO** : départ 1000, K=24, espérance logistique classique. Parties traitées
   dans l'ordre chronologique, **par catégorie** (les deux ELO ne se mélangent
-  jamais).
+  jamais). Quand un match porte un **score de manches** (Limité), le score de
+  performance mêle le **résultat du BO** (dominant) et le **ratio de manches**
+  (`ELO_PART_MANCHES`, 0,3 par défaut) : gagner le BO rapporte toujours plus que
+  le perdre, mais gagner 2-0 rapporte plus que 2-1. Sans score (Construit), on
+  retombe sur le résultat sec V/N/D.
 - **Commander** : par participant de pod, `participation (1 pt)` + `victoire
   (3 pts)` si `place = 1`. Cumulé par joueur **et** par deck ; winrate =
   victoires / parties. Constantes ajustables en tête du fichier.
@@ -131,8 +140,10 @@ qu'à **commiter** `data/scryfall.json` + `data/cards/` (aucune dépendance : Py
 
 ## Où se fait quoi
 
-- **Saisie** : publication, création de soirée, saisie des parties (onglets
-  Commander / Construit / Limité) et gestion des saisons.
+- **Saisie** : publication, création de soirée, saisie des parties et gestion
+  des saisons. Trois onglets : **Commander** (pods), **Construit** (round-robin
+  auto : chacun affronte chacun, on coche le vainqueur), **Limité** (saisie
+  manuelle des pairings + score A / score B de chaque match, pas de ronde auto).
 - **Joueurs** : cartes + fiche détaillée ; ajout/édition/suppression des joueurs.
 - **Decks** : une carte par deck (un deck cumule ses stats même *prêté* à
   d'autres joueurs) ; ajout/édition/suppression.
