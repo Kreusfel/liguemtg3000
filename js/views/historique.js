@@ -130,10 +130,14 @@ function ligne(p, jn, dn, model) {
   }
   const cat = p.categorie === 'limite' ? 'Limité' : 'Construit';
   const [A, B] = p.participants;
-  const nom = (x) => `${esc(jn[x.joueur_id] || '?')} <b>(${x.resultat})</b>`;
+  const hasScore = A.score != null && B.score != null;
+  const nomArch = (x) => `${esc(jn[x.joueur_id] || '?')}${x.note ? ` <em class="arch">${esc(x.note)}</em>` : ''}`;
+  const duel = hasScore
+    ? `${nomArch(A)} <b>${A.score}</b> <span class="vs">–</span> <b>${B.score}</b> ${nomArch(B)}`
+    : `${esc(jn[A.joueur_id] || '?')} <b>(${A.resultat})</b> <span class="vs">vs</span> ${esc(jn[B.joueur_id] || '?')} <b>(${B.resultat})</b>`;
   return `<div class="partie">
     <span class="ptag ptag-${p.categorie}">${cat}${p.format ? ' · ' + esc(p.format) : ''}</span>
-    <div class="duel">${nom(A)} <span class="vs">vs</span> ${nom(B)}</div>${actions}
+    <div class="duel">${duel}</div>${actions}
   </div>`;
 }
 
@@ -155,6 +159,14 @@ function formEditPartie(model, p) {
   const isLim = p.categorie === 'limite';
   const [A, B] = p.participants;
   const res = A.resultat === 'V' ? 'A' : A.resultat === 'D' ? 'B' : 'N';
+  // Limité = saisie au score (vainqueur déduit) ; Construit = vainqueur direct.
+  const champResultat = isLim
+    ? `<div><label>Score A</label><input type="number" min="0" class="ep-sa" value="${A.score ?? ''}"></div>
+       <div><label>Score B</label><input type="number" min="0" class="ep-sb" value="${B.score ?? ''}"></div>`
+    : `<div><label>Résultat</label><select class="ep-res">
+        <option value="A" ${res === 'A' ? 'selected' : ''}>A gagne</option>
+        <option value="B" ${res === 'B' ? 'selected' : ''}>B gagne</option>
+        <option value="N" ${res === 'N' ? 'selected' : ''}>Nul</option></select></div>`;
   return `<div class="partie-edit" data-id="${p.id}">
     <h3>Modifier un match 1v1</h3>
     <div class="fgrid">
@@ -167,11 +179,12 @@ function formEditPartie(model, p) {
     <div class="fgrid" style="margin-top:12px">
       <div><label>Joueur A</label><select class="ep-a">${optJoueursSel(model, A.joueur_id)}</select></div>
       <div><label>Joueur B</label><select class="ep-b">${optJoueursSel(model, B.joueur_id)}</select></div>
-      <div><label>Résultat</label><select class="ep-res">
-        <option value="A" ${res === 'A' ? 'selected' : ''}>A gagne</option>
-        <option value="B" ${res === 'B' ? 'selected' : ''}>B gagne</option>
-        <option value="N" ${res === 'N' ? 'selected' : ''}>Nul</option></select></div>
+      ${champResultat}
     </div>
+    ${isLim ? `<div class="fgrid" style="margin-top:12px">
+      <div><label>Couleurs / archétype A</label><input type="text" class="ep-na" value="${esc(A.note || '')}" placeholder="ex. WU contrôle"></div>
+      <div><label>Couleurs / archétype B</label><input type="text" class="ep-nb" value="${esc(B.note || '')}" placeholder="ex. RG agro"></div>
+    </div>` : ''}
     <div style="margin-top:14px;display:flex;gap:8px">
       <button class="btn btn-noir" data-act="pa-save" data-id="${p.id}">Enregistrer</button>
       <button class="btn" data-act="pa-cancel">Annuler</button>
@@ -258,14 +271,31 @@ function savePartie(box, model, ctx) {
   } else {
     const a = box.querySelector('.ep-a').value, b = box.querySelector('.ep-b').value;
     if (!a || !b || a === b) return ctx.toast('Choisis deux joueurs différents.');
-    const r = box.querySelector('.ep-res').value;
-    const rA = r === 'A' ? 'V' : r === 'B' ? 'D' : 'N';
-    const rB = r === 'B' ? 'V' : r === 'A' ? 'D' : 'N';
+    const saEl = box.querySelector('.ep-sa');
+    let partA, partB;
+    if (saEl) {   // Limité : saisie au score, vainqueur déduit
+      const sa = parseInt(saEl.value, 10), sb = parseInt(box.querySelector('.ep-sb').value, 10);
+      if (!Number.isFinite(sa) || !Number.isFinite(sb)) return ctx.toast('Renseigne les deux scores.');
+      const rA = sa > sb ? 'V' : sa < sb ? 'D' : 'N';
+      const rB = sb > sa ? 'V' : sb < sa ? 'D' : 'N';
+      partA = { joueur_id: a, deck_id: null, resultat: rA, score: sa };
+      partB = { joueur_id: b, deck_id: null, resultat: rB, score: sb };
+      const na = (box.querySelector('.ep-na') || {}).value;
+      const nb = (box.querySelector('.ep-nb') || {}).value;
+      if (na && na.trim()) partA.note = na.trim();
+      if (nb && nb.trim()) partB.note = nb.trim();
+    } else {      // Construit : vainqueur direct
+      const r = box.querySelector('.ep-res').value;
+      const rA = r === 'A' ? 'V' : r === 'B' ? 'D' : 'N';
+      const rB = r === 'B' ? 'V' : r === 'A' ? 'D' : 'N';
+      partA = { joueur_id: a, deck_id: null, resultat: rA };
+      partB = { joueur_id: b, deck_id: null, resultat: rB };
+    }
     updatePartie({
       id: p.id, soiree_id,
       categorie: box.querySelector('.ep-cat').value,
       format: box.querySelector('.ep-format').value.trim(),
-      participants: [{ joueur_id: a, deck_id: null, resultat: rA }, { joueur_id: b, deck_id: null, resultat: rB }],
+      participants: [partA, partB],
     });
   }
   editing.partie = null; ctx.toast('Partie modifiée.'); ctx.refresh();

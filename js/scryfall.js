@@ -95,6 +95,44 @@ export async function resolve(nom) {
   return cache[k];
 }
 
+// Suggestions de noms de commandants pour l'autocomplétion (async).
+// Renvoie une liste [{ value, label }] : `value` = nom ANGLAIS canonique (ce
+// qu'on stocke, pour que resolve()/le nom FR marchent), `label` = affichage.
+// Socle fiable : l'endpoint autocomplete officiel (anglais). Complément FR
+// best-effort via la recherche multilingue (ex. « Le Monstre Gitrog »).
+// IMPORTANT : en cas d'échec réseau (proxy, hors-ligne), renvoie [] — l'appelant
+// n'affiche alors aucune liste et la saisie manuelle reste pleinement possible.
+export async function suggest(term) {
+  const q = String(term || '').trim();
+  if (q.length < 2) return [];
+  try {
+    const out = [];
+    const seen = new Set();
+    const push = (value, label) => {
+      const kk = String(value || '').toLowerCase();
+      if (value && !seen.has(kk)) { seen.add(kk); out.push({ value, label: label || value }); }
+    };
+
+    // 1) Autocomplete anglais (prefixe, rapide).
+    const en = await jget('https://api.scryfall.com/cards/autocomplete?q=' + encodeURIComponent(q));
+    if (en && Array.isArray(en.data)) en.data.forEach((n) => push(n, n));
+
+    // 2) Complément français si peu de résultats (recherche multilingue).
+    if (out.length < 8) {
+      const propre = q.replace(/["\\]/g, ' ').trim();
+      const fr = await jget('https://api.scryfall.com/cards/search?include_multilingual=true&unique=cards&q='
+        + encodeURIComponent(`lang:fr name:"${propre}"`));
+      if (fr && Array.isArray(fr.data)) {
+        fr.data.forEach((c) => push(c.name,
+          c.printed_name && c.printed_name !== c.name ? `${c.printed_name} · ${c.name}` : c.name));
+      }
+    }
+    return out.slice(0, 12);
+  } catch {
+    return [];   // Scryfall injoignable → pas de suggestions, saisie manuelle intacte
+  }
+}
+
 // Peint une liste de commandants. On charge d'abord le cache embarqué, puis on
 // applique chaque entrée (illustration + nom FR) via `onResolved(nom, entry)`.
 // Un commandant absent du fichier déclenche un repli live (réseau libre requis).
